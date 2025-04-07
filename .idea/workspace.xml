@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/Dalton.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/CorrelationClustering.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/IncrementalMerge.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/PartialWindowClustering.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/SimilarityGraph.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/clustering/Best.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/clustering/Clustering.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/clustering/Vote.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/containers/Block.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/containers/Cluster.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/containers/PartialClusteringOutput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/stringsimilarity/Similarity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/helperfunctions/PartitionerAssigner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/CM.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/CardinalityPartitioner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/DAGreedy.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/Hashing.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/Partitioner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/Shuffling.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/TwoChoices.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/cAM.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/containers/CardinalityWorker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/containers/PartialAssignment.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/containers/PartialLoad.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/containers/PartialLoadCard.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/containers/Worker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/ContextualBandits.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/Dalton.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/DaltonCooperative.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/QTableReducer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/containers/CountMinSketch.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/containers/HotStatistics.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/containers/Qtable.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/containers/QtableEntry.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/containers/syncMessage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/containers/syncMessagePartitioners.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/partitioning/dalton/state/State.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/record/Record.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/record/RecordStr.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/sources/CircularFeed.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/sources/CircularFeed2files.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/MapWordCount.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/ReduceWordCount.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/WordCount.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/WordCountMultiAgent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/containers/WordCountState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/MapAggregator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/MySpout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/MyWordCount.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/ReduceAggregator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/CM.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/CardinalityPartitioner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/HashPartitioner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/ShufflePartitioner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/TwoChoices.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/cAM.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/CardinalityWorker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/PartialAssignment.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/PartialLoad.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/Worker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/ContextualBandits.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/DaltonPartitioner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/State.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/CountMinSketch.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/HotStatistics.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/Qtable.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/QtableEntry.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/prompt/Prompt.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/prompt/Stats.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trident/src/main/resources/exclude-storm.xml" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="customMavenHome" value="E:\apache-maven-3.9.9" />
+        <option name="localRepository" value="E:\apache-maven-3.9.9\repo" />
+        <option name="mavenHomeTypeForPersistence" value="CUSTOM" />
+        <option name="userSettingsFile" value="E:\apache-maven-3.9.9\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2tO2di4Aso2uoNfIe0H3HgZ5GbR" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;G:/experience/DRL-Pytorch&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDK&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.5241379&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.javacompiler&quot;,
+    &quot;应用程序.WordCount.executor&quot;: &quot;Run&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="WordCount" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="wordCount.WordCount" />
+      <module name="flink" />
+      <option name="PROGRAM_PARAMETERS" value="input/dataset.csv - 2 - DALTON 1000 5000 1000 2" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="wordCount.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="应用程序.WordCount" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="" />
+      <created>1740208890493</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1740208890493</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.csv" />
+  </component>
+</project>
