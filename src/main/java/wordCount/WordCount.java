@@ -36,7 +36,10 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.metrics.Gauge;
+import org.apache.flink.api.common.JobExecutionResult;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -48,9 +51,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.io.File;
 
 import partitioning.*;
 import record.Record;
+import record.RecordStr;
 import sources.*;
 import wordCount.containers.*;
 
@@ -64,7 +71,7 @@ import static helperfunctions.PartitionerAssigner.initializePartitioner;
 public class WordCount {
     // 性能监控类
     public static class PerformanceMonitor {
-        private static final PerformanceMonitor INSTANCE = new PerformanceMonitor();
+        private static PerformanceMonitor INSTANCE = null;
         private final String logFilePath;
         private final AtomicLong recordCounter = new AtomicLong(0);
         private final AtomicLong lastTimestamp = new AtomicLong(System.currentTimeMillis());
@@ -72,9 +79,14 @@ public class WordCount {
         private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         private BufferedWriter writer;
         private boolean isRunning = false;
+        private static String methodName = "unknown";
 
         private PerformanceMonitor() {
-            this.logFilePath = "performance_metrics_" + System.currentTimeMillis() + ".csv";
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            // 确保输出目录存在
+            new File("output").mkdirs();
+            this.logFilePath = "output/performance_metrics_" + methodName + "_" + sdf.format(new Date()) + ".csv";
+            System.out.println("Creating performance log with method name: " + methodName);
             try {
                 writer = new BufferedWriter(new FileWriter(logFilePath));
                 writer.write("timestamp,heapMemoryUsed,nonHeapMemoryUsed,recordsProcessed,throughput\n");
@@ -83,7 +95,15 @@ public class WordCount {
             }
         }
 
-        public static PerformanceMonitor getInstance() {
+        public static void setMethodName(String method) {
+            methodName = method;
+            System.out.println("Setting performance monitor method name to: " + methodName);
+        }
+
+        public static synchronized PerformanceMonitor getInstance() {
+            if (INSTANCE == null) {
+                INSTANCE = new PerformanceMonitor();
+            }
             return INSTANCE;
         }
 
@@ -143,23 +163,25 @@ public class WordCount {
         }
     }
 
-    // 带监控的处理函数
-    public static class MonitoredProcessFunction extends ProcessFunction<Tuple2<Integer, Record>, Tuple2<Integer, Record>> {
-        @Override
-        public void processElement(Tuple2<Integer, Record> value, ProcessFunction<Tuple2<Integer, Record>, Tuple2<Integer, Record>>.Context ctx, Collector<Tuple2<Integer, Record>> out) {
-            PerformanceMonitor.getInstance().incrementCounter();
-            out.collect(value);
-        }
-    }
-
     /**
      * Main method.
      *
      * @throws Exception which occurs during job execution.
      */
     public static void main(String[] args) throws Exception {
-        // 启动性能监控器
-        PerformanceMonitor.getInstance().start();
+        System.out.println("Starting WordCount with args: " + Arrays.toString(args));
+        
+        // 先设置性能监控的方法名，必须在获取实例之前调用
+        String method = "unknown";
+        if (args.length > 4 && args[4] != null) {
+            method = args[4];
+            System.out.println("Method name from args[4]: " + method);
+        }
+        PerformanceMonitor.setMethodName(method);
+        
+        // 初始化性能监控
+        PerformanceMonitor monitor = PerformanceMonitor.getInstance();
+        monitor.start(); // 启动性能监控
         
         try {
             String pathFile = args[0];
@@ -178,7 +200,7 @@ public class WordCount {
             
             // 创建 Flink 配置
             Configuration config = new Configuration();
-            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 6); // 每个 TaskManager 提供 6 个 Slot
+            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 10); // 每个 TaskManager 提供 6 个 Slot
 
             // 创建带 Web UI 的本地环境
             StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
@@ -188,24 +210,39 @@ public class WordCount {
             // 添加自定义指标
             env.getConfig().setGlobalJobParameters(new Configuration());
 
-            // Circular source
-            SingleOutputStreamOperator<Tuple2<Integer, Record>> data = env.addSource(new CircularFeed(pathFile), "CircularDataGenerator")
+            // Circular source - 使用原始实现，同时指定确切的源函数类型
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            SingleOutputStreamOperator<Tuple2<Integer, Record>> data = (SingleOutputStreamOperator) env
+                    .addSource((org.apache.flink.streaming.api.functions.source.SourceFunction<Record>) new CircularFeed(pathFile), "CircularDataGenerator")
                     .setParallelism(parallelism)
                     .slotSharingGroup("source")
                     .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps())
                     .slotSharingGroup("source")
-                    .flatMap(partitioner1)
-                    .setParallelism(parallelism)
-                    .slotSharingGroup("source")
-                    .process(new MonitoredProcessFunction()) // 添加监控处理函数
+                    .flatMap((org.apache.flink.api.common.functions.FlatMapFunction<Record, Tuple2<Integer, Record>>) partitioner1)
                     .setParallelism(parallelism)
                     .slotSharingGroup("source");
 
+            // 添加性能监控
+            data = (SingleOutputStreamOperator<Tuple2<Integer, Record>>) data
+                    .map(new org.apache.flink.api.common.functions.MapFunction<Tuple2<Integer, Record>, Tuple2<Integer, Record>>() {
+                        @Override
+                        public Tuple2<Integer, Record> map(Tuple2<Integer, Record> tuple) throws Exception {
+                            PerformanceMonitor.getInstance().incrementCounter();
+                            return tuple;
+                        }
+                    })
+                    .setParallelism(1)
+                    .name("Performance Monitoring");
+
+            // 添加显式的类型抑制警告
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            SingleOutputStreamOperator<WordCountState> body;
+            
             if (args[4].equals("HASHING") || args[4].equals("cAM")) { // Hashing-like techniques
-                SingleOutputStreamOperator<WordCountState> body = data
+                body = data
                         .keyBy(x -> (x.f0)) // keyBy the key specified by the partitioner
                         .window(SlidingEventTimeWindows.of(WINDOW_SIZE, WINDOW_SLIDE))
-                        .aggregate(new MapWordCount()) // word count in one step
+                        .aggregate((org.apache.flink.api.common.functions.AggregateFunction<Tuple2<Integer, Record>, Map<Integer, WordCountState>, Map<Integer, WordCountState>>) new MapWordCount()) // word count
                         .setParallelism(parallelism)
                         .setMaxParallelism(parallelism)
                         .process(new SplitPerKeyResult())
@@ -213,10 +250,10 @@ public class WordCount {
                         .setMaxParallelism(parallelism);
             }
             else { // key-splitting techniques
-                SingleOutputStreamOperator<WordCountState> body = data
+                body = data
                         .keyBy(x -> (x.f0)) // keyBy the key specified by the partitioner
                         .window(SlidingEventTimeWindows.of(WINDOW_SIZE, WINDOW_SLIDE))
-                        .aggregate(new MapWordCount()) // --------- 1st STEP OF THE PROCESSING ---------
+                        .aggregate((org.apache.flink.api.common.functions.AggregateFunction<Tuple2<Integer, Record>, Map<Integer, WordCountState>, Map<Integer, WordCountState>>) new MapWordCount()) // 1st STEP
                         .setParallelism(parallelism)
                         .setMaxParallelism(parallelism)
                         .slotSharingGroup("step1")
@@ -236,11 +273,15 @@ public class WordCount {
                 DataStream<WordCountState> nonHotResult = body.getSideOutput(outputTag);
             }
 
-            // 运行任务
-            env.execute("Flink Stream Java API Skeleton");
+            // Run
+            JobExecutionResult result = env.execute("Word Counter");
+            
+            // 输出执行结果信息
+            System.out.println("Job completed successfully");
+            System.out.println("Execution time: " + result.getNetRuntime(TimeUnit.SECONDS) + " seconds");
         } finally {
-            // 确保在程序退出时停止监控
-            PerformanceMonitor.getInstance().stop();
+            // 关闭性能监控并保存数据
+            monitor.stop();
         }
     }
 
@@ -276,14 +317,4 @@ public class WordCount {
             }
         }
     }
-
-    // 自定义ProcessFunction
-    public static class DebugProcessFunction extends ProcessFunction<Tuple2<Integer, Record>, Tuple2<Integer, Record>> {
-        @Override
-        public void processElement(Tuple2<Integer, Record> value, Context ctx, Collector<Tuple2<Integer, Record>> out) {
-            System.out.println("DEBUG [After Partitioner] Record: " + value);
-            out.collect(value); // 保持数据流继续
-        }
-    }
-
 }

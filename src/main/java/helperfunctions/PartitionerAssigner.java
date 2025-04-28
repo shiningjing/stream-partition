@@ -20,6 +20,7 @@ package helperfunctions;
 
 import partitioning.*;
 import partitioning.dalton.*;
+import partitioning.sarsa.SRLP;
 
 enum PARTITIONING_ALG{
     SHUFFLING,
@@ -28,7 +29,8 @@ enum PARTITIONING_ALG{
     DALTON,
     CM,
     cAM,
-    DAGreedy
+    DAGreedy,
+    SRLP
 }
 
 public class PartitionerAssigner {
@@ -62,6 +64,9 @@ public class PartitionerAssigner {
             case "DAGreedy":
                 partitioning_alg = PARTITIONING_ALG.DAGreedy;
                 break;
+            case "SRLP":
+                partitioning_alg = PARTITIONING_ALG.SRLP;
+                break;
             default:
                 throw new IllegalArgumentException("Unknown Partitioning Algorithm " + str);
         }
@@ -84,6 +89,8 @@ public class PartitionerAssigner {
             partitioner = new cAM(size, slide, parallelism);
         } else if (algorithm == PARTITIONING_ALG.DAGreedy){
             partitioner = new DAGreedy(parallelism, slide, size, numOfKeys);
+        } else if (algorithm == PARTITIONING_ALG.SRLP){
+            partitioner = new SRLP(parallelism, slide, size, numOfKeys);
         } else {
             throw new IllegalArgumentException("Unknown Partitioning Algorithm" + algorithm);
         }

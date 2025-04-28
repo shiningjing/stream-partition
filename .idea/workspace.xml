@@ -101,7 +101,7 @@
     </option>
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0
@@ -129,9 +129,11 @@
 }</component>
   <component name="RunManager">
     <configuration name="WordCount" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="corretto-11" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <option name="MAIN_CLASS_NAME" value="wordCount.WordCount" />
       <module name="flink" />
-      <option name="PROGRAM_PARAMETERS" value="input/dataset.csv - 2 - DALTON 1000 5000 1000 2" />
+      <option name="PROGRAM_PARAMETERS" value="input/big_dataset.txt - 2 - SRLP 1 60 1000 2" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="wordCount.*" />
