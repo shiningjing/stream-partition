@@ -1,3 +1,5 @@
 # 默认忽略的文件
 /shelf/
 /workspace.xml
+target/         # 忽略所有构建产物
+*.jar           # 忽略所有 JAR 文件
