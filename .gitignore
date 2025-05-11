@@ -1,0 +1,9 @@
+# 默认忽略的文件
+/shelf/
+/workspace.xml
+# .gitignore
+target/         # 忽略所有构建产物
+*.jar           # 忽略所有 JAR 文件"input/raw_tweets_text.csv" 
+"target/"
+input/
+output/
