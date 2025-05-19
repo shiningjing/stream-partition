@@ -178,7 +178,7 @@ public class WordCount {
             
             // 创建 Flink 配置
             Configuration config = new Configuration();
-            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 6); // 每个 TaskManager 提供 6 个 Slot
+            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 10); // 每个 TaskManager 提供 6 个 Slot
 
             // 创建带 Web UI 的本地环境
             StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
@@ -190,15 +190,15 @@ public class WordCount {
 
             // Circular source
             SingleOutputStreamOperator<Tuple2<Integer, Record>> data = env.addSource(new CircularFeed(pathFile), "CircularDataGenerator")
-                    .setParallelism(parallelism)
+                    .setParallelism(1)
                     .slotSharingGroup("source")
                     .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps())
                     .slotSharingGroup("source")
                     .flatMap(partitioner1)
-                    .setParallelism(parallelism)
+                    .setParallelism(1)
                     .slotSharingGroup("source")
                     .process(new MonitoredProcessFunction()) // 添加监控处理函数
-                    .setParallelism(parallelism)
+                    .setParallelism(1)
                     .slotSharingGroup("source");
 
             if (args[4].equals("HASHING") || args[4].equals("cAM")) { // Hashing-like techniques

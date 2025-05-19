@@ -4,14 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/Dalton.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="DQN">
+      <change afterPath="$PROJECT_DIR$/input/big_dataset.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/input/raw_tweets_text.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_DALTON_20250508_144545.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_DQN_20250508_144048.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_DQN_20250508_180041.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_DQN_20250508_191347.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_SHUFFING_20250508_144402.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_SHUFFLING_20250508_144425.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_SPLP_20250508_185044.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output/performance_metrics_SRLP_20250508_185056.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/CorrelationClustering.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/IncrementalMerge.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flink/src/main/java/correlation_clustering/PartialWindowClustering.java" beforeDir="false" />
@@ -57,30 +61,23 @@
       <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/WordCount.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/WordCountMultiAgent.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flink/src/main/java/wordCount/containers/WordCountState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/MapAggregator.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/MySpout.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/MyWordCount.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/ReduceAggregator.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/CM.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/CardinalityPartitioner.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/HashPartitioner.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/ShufflePartitioner.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/TwoChoices.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/cAM.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/CardinalityWorker.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/PartialAssignment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/PartialLoad.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/containers/Worker.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/ContextualBandits.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/DaltonPartitioner.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/State.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/CountMinSketch.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/HotStatistics.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/Qtable.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/dalton/containers/QtableEntry.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/prompt/Prompt.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/java/partitioning/prompt/Stats.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trident/src/main/resources/exclude-storm.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/helperfunctions/PartitionerAssigner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/helperfunctions/PartitionerAssigner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/wordCount/WordCount.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/wordCount/WordCount.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/helperfunctions/PARTITIONING_ALG.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/helperfunctions/PARTITIONING_ALG.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/helperfunctions/PartitionerAssigner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/helperfunctions/PartitionerAssigner.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner$TrainingExample.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner$TrainingExample.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNReplayMemory$DQNTransition.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNReplayMemory$DQNTransition.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNReplayMemory.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNReplayMemory.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$DebugProcessFunction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$DebugProcessFunction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$ForwardKeys.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$ForwardKeys.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$MonitoredProcessFunction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$MonitoredProcessFunction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$PerformanceMonitor.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$PerformanceMonitor.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$SplitPerKeyResult.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$SplitPerKeyResult.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -90,6 +87,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;shiningjing&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/shiningjing/stream-partition.git&quot;,
+    &quot;accountId&quot;: &quot;0c7df18d-889e-485a-8761-bbfe3e618b6f&quot;
+  }
+}</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -116,7 +125,7 @@
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dqn&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;G:/experience/DRL-Pytorch&quot;,
@@ -130,8 +139,8 @@
   <component name="RunManager">
     <configuration name="WordCount" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="wordCount.WordCount" />
-      <module name="flink" />
-      <option name="PROGRAM_PARAMETERS" value="input/dataset.csv - 2 - DALTON 1000 5000 1000 2" />
+      <module name="flink-wordcount" />
+      <option name="PROGRAM_PARAMETERS" value="input/dataset.csv - 4 - DQN 1000 60000 1000 2" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="wordCount.*" />
@@ -157,9 +166,23 @@
       <option name="presentableId" value="Default" />
       <updated>1740208890493</updated>
     </task>
+    <task id="LOCAL-00001" summary="DQN">
+      <option name="closed" value="true" />
+      <created>1746942517560</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1746942517560</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.csv" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="初始化" />
+    <MESSAGE value="DQN" />
+    <option name="LAST_COMMIT_MESSAGE" value="DQN" />
   </component>
 </project>
