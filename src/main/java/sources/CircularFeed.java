@@ -20,13 +20,12 @@ package sources;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.apache.flink.core.fs.Path;
+import org.apache.flink.core.fs.FileSystem;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import record.*;
 
@@ -54,23 +53,41 @@ public class CircularFeed extends RichParallelSourceFunction<Record> {
     public void open(Configuration conf) throws Exception {
         long id = 0L;
         String record;
+        final int MAX_RECORDS = 100000; // 最大数据条数限制
+
         try {
-            File myObj = new File(filePath);
-            BufferedReader myReader = new BufferedReader(new FileReader(myObj));
-            while ((record = myReader.readLine())!= null) {
-                attrs = record.split(",");
-                try {
-                    data.add(new RecordStr(Integer.parseInt(attrs[0]), attrs[1], id));
-                } catch (NumberFormatException e) {
-                    System.out.println("Data problem. " + id);
-                    e.printStackTrace();
-                    continue;
+            // Use Flink's FileSystem API to read the file
+            Path path = new Path(filePath);
+            FileSystem fs = path.getFileSystem();
+
+            BufferedReader myReader = null;
+
+            try {
+                myReader = new BufferedReader(new InputStreamReader(fs.open(path)));
+
+                // 跳过第一行标题
+                String headerLine = myReader.readLine();
+
+                while ((record = myReader.readLine()) != null && id < MAX_RECORDS) {
+                    attrs = record.split(",");
+                    try {
+                        data.add(new RecordStr(Integer.parseInt(attrs[0]), attrs[1], id));
+                    } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                        continue;
+                    }
+                    id++;
                 }
-                id++;
+            } finally {
+                if (myReader != null) {
+                    try {
+                        myReader.close();
+                    } catch (Exception e) {
+                        System.err.println("ERROR: Failed to close file reader: " + e.getMessage());
+                    }
+                }
             }
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("An error occurred while reading the file.");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -86,17 +103,20 @@ public class CircularFeed extends RichParallelSourceFunction<Record> {
 
     @Override
     public void run(SourceContext<Record> ctx) throws Exception {
+        int cycleCount = 0;
+
         for (int j = 0; j < data.size() && !cancelled; ) {
             RecordStr record = data.get(j);
             record.setTs(timestamp);
             //sleep(120000);
             ctx.collectWithTimestamp(record, timestamp);
             timestamp += 1;
-            if (j == data.size() - 1) {
-                j = 0;
-            }
-            else{
-                j++;
+
+            // 移动到下一条记录，实现循环播放
+            j++;
+            if (j >= data.size()) {
+                j = 0;  // 重新开始循环
+                cycleCount++;
             }
         }
     }
@@ -111,5 +131,6 @@ public class CircularFeed extends RichParallelSourceFunction<Record> {
         cancelled = true;
     }
 }
+
 
 

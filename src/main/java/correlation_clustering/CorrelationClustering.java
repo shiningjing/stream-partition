@@ -20,6 +20,8 @@ package correlation_clustering;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -34,7 +36,7 @@ import org.apache.flink.util.OutputTag;
 import java.lang.IllegalArgumentException;
 import java.util.*;
 
-import record.*;
+import record.Record;
 import correlation_clustering.containers.PartialClusteringOutput;
 import partitioning.*;
 import sources.*;
@@ -77,18 +79,26 @@ public class CorrelationClustering {
 
         final OutputTag<PartialClusteringOutput> outputTag = new OutputTag<PartialClusteringOutput>("side-output"){};
         Partitioner partitioner = initializePartitioner(args[4], combinersParallelism, Integer.parseInt(args[5]), Integer.parseInt(args[6]), estimatedNumOfKeys);
+        Configuration config = new Configuration();
+        config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 10); // 每个 TaskManager 提供 6 个 Slot
+
+        // 创建环境
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
 
         // Configure the environment
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        //StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setMaxParallelism(combinersParallelism);
 
         // Circular source
         SingleOutputStreamOperator<Tuple2<Integer, Record>> data = env.addSource(new CircularFeed(pathFile), "CircularDataGenerator")
+                .setParallelism(1)
                 .slotSharingGroup("source")
                 .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps())
+                .setParallelism(1)
                 .slotSharingGroup("source")
                 .flatMap(partitioner)
+                .setParallelism(1)
                 .slotSharingGroup("source");
 
         if (args[4].equals("HASHING") || args[4].equals("cAM")){ // Hashing-like techniques

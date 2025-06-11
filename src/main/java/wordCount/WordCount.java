@@ -65,7 +65,7 @@ public class WordCount {
     // 性能监控类
     public static class PerformanceMonitor {
         private static final PerformanceMonitor INSTANCE = new PerformanceMonitor();
-        private final String logFilePath;
+        private String logFilePath;
         private final AtomicLong recordCounter = new AtomicLong(0);
         private final AtomicLong lastTimestamp = new AtomicLong(System.currentTimeMillis());
         private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
@@ -74,17 +74,22 @@ public class WordCount {
         private boolean isRunning = false;
 
         private PerformanceMonitor() {
-            this.logFilePath = "performance_metrics_" + System.currentTimeMillis() + ".csv";
+            // 初始化时不设置文件路径，等待方法名称
+        }
+
+        public static PerformanceMonitor getInstance() {
+            return INSTANCE;
+        }
+
+        // 设置方法名称并初始化文件
+        public void setMethod(String methodName) {
+            this.logFilePath = "output/performance_metrics_" + methodName + "_" + System.currentTimeMillis() + ".csv";
             try {
                 writer = new BufferedWriter(new FileWriter(logFilePath));
                 writer.write("timestamp,heapMemoryUsed,nonHeapMemoryUsed,recordsProcessed,throughput\n");
             } catch (IOException e) {
                 System.err.println("Error initializing performance monitor: " + e.getMessage());
             }
-        }
-
-        public static PerformanceMonitor getInstance() {
-            return INSTANCE;
         }
 
         public void start() {
@@ -158,9 +163,6 @@ public class WordCount {
      * @throws Exception which occurs during job execution.
      */
     public static void main(String[] args) throws Exception {
-        // 启动性能监控器
-        PerformanceMonitor.getInstance().start();
-        
         try {
             String pathFile = args[0];
             int parallelism = Integer.parseInt(args[2]);
@@ -176,12 +178,16 @@ public class WordCount {
             // Initialize the partitioner
             Partitioner partitioner1 = initializePartitioner(args[4], parallelism, Integer.parseInt(args[5]), Integer.parseInt(args[6]), numOfKeys);
             
+            // 设置性能监控器的方法名称并启动
+            PerformanceMonitor.getInstance().setMethod(args[4]);
+            PerformanceMonitor.getInstance().start();
+            
             // 创建 Flink 配置
             Configuration config = new Configuration();
-            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 10); // 每个 TaskManager 提供 6 个 Slot
+            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 73); // 每个 TaskManager 提供 6 个 Slot
 
-            // 创建带 Web UI 的本地环境
-            StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+            // 创建环境
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
             env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
             env.setMaxParallelism(parallelism);
             
@@ -193,6 +199,7 @@ public class WordCount {
                     .setParallelism(1)
                     .slotSharingGroup("source")
                     .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps())
+                    .setParallelism(1)
                     .slotSharingGroup("source")
                     .flatMap(partitioner1)
                     .setParallelism(1)

@@ -44,6 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.BitSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
+import java.io.IOException;
 
 /**
  * 带有目标网络的双线程DQN (Deep Q-Network) Partitioner
@@ -51,8 +52,8 @@ import java.util.List;
  */
 public class DQNPartitioner extends Partitioner {
     private final State state;
-    private final MultiLayerNetwork mainNetwork;     // 主网络用于训练
-    private final MultiLayerNetwork targetNetwork;   // 目标网络用于预测
+    private final transient MultiLayerNetwork mainNetwork;     // 主网络用于训练
+    private final transient MultiLayerNetwork targetNetwork;   // 目标网络用于预测
     private final int stateSize;
     private final int actionSize;
     private static final double GAMMA = 0.99;
@@ -155,6 +156,12 @@ public class DQNPartitioner extends Partitioner {
      * 从主网络复制权重到目标网络
      */
     private void copyNetworkWeights() {
+        // 检查网络是否已初始化
+        if (mainNetwork == null || targetNetwork == null) {
+            System.err.println("网络未初始化，跳过权重复制");
+            return;
+        }
+        
         try {
             networkLock.writeLock().lock();
             // 获取主网络参数
@@ -203,13 +210,18 @@ public class DQNPartitioner extends Partitioner {
         double[] stateVector = buildStateVector(record);
         
         // 使用目标网络进行推理
-        try {
-            networkLock.readLock().lock();
-            INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
-            INDArray qValues = targetNetwork.output(stateInput);
-            worker = Nd4j.argMax(qValues, 1).getInt(0);
-        } finally {
-            networkLock.readLock().unlock();
+        if (targetNetwork == null) {
+            // 网络未初始化，使用简单哈希分区
+            worker = Math.abs(record.getKeyId() % parallelism);
+        } else {
+            try {
+                networkLock.readLock().lock();
+                INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
+                INDArray qValues = targetNetwork.output(stateInput);
+                worker = Nd4j.argMax(qValues, 1).getInt(0);
+            } finally {
+                networkLock.readLock().unlock();
+            }
         }
         
         // 将热键添加到缓冲区用于批量训练
@@ -266,13 +278,18 @@ public class DQNPartitioner extends Partitioner {
                                 
                                 // 使用目标网络进行推理
                                 int bestWorker;
-                                try {
-                                    networkLock.readLock().lock();
-                                    INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
-                                    INDArray qValues = targetNetwork.output(stateInput);
-                                    bestWorker = Nd4j.argMax(qValues, 1).getInt(0);
-                                } finally {
-                                    networkLock.readLock().unlock();
+                                if (targetNetwork == null) {
+                                    // 网络未初始化，使用简单哈希分区
+                                    bestWorker = Math.abs(record.getKeyId() % parallelism);
+                                } else {
+                                    try {
+                                        networkLock.readLock().lock();
+                                        INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
+                                        INDArray qValues = targetNetwork.output(stateInput);
+                                        bestWorker = Nd4j.argMax(qValues, 1).getInt(0);
+                                    } finally {
+                                        networkLock.readLock().unlock();
+                                    }
                                 }
                                 
                                 // 加入训练队列
@@ -291,7 +308,9 @@ public class DQNPartitioner extends Partitioner {
                     }
                     
                 } catch (Exception e) {
-                    System.err.println("热键处理过程中发生错误: " + e.getMessage());
+                    System.err.println("热键处理过程中发生严重错误，程序即将退出: " + e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
                 } finally {
                     isProcessingHotKeys.set(false);
                     
@@ -375,7 +394,9 @@ public class DQNPartitioner extends Partitioner {
                         trainMainNetwork(example.state, example.action, example.reward);
                     }
                 } catch (Exception e) {
-                    System.err.println("训练过程中发生错误: " + e.getMessage());
+                    System.err.println("训练过程中发生严重错误，程序即将退出: " + e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
                 } finally {
                     isTraining.set(false);
                     
@@ -392,6 +413,12 @@ public class DQNPartitioner extends Partitioner {
      * 训练主网络
      */
     private void trainMainNetwork(double[] stateVector, int action, double reward) {
+        // 检查网络是否已初始化
+        if (mainNetwork == null) {
+            System.err.println("主网络未初始化，跳过训练");
+            return;
+        }
+        
         try {
             networkLock.writeLock().lock();
             // 1. 准备状态输入
@@ -422,10 +449,36 @@ public class DQNPartitioner extends Partitioner {
     }
     
     /**
-     * 自定义反序列化方法 - 初始化执行器
+     * 自定义反序列化方法 - 初始化执行器和网络
      */
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
         in.defaultReadObject();
         executorsInitialized = false;  // 将在下一次调用时重新初始化
+        
+        // 重新初始化网络
+        MultiLayerConfiguration conf = createNetworkConfig();
+        
+        // 初始化主网络和目标网络
+        MultiLayerNetwork tempMainNetwork = new MultiLayerNetwork(conf);
+        tempMainNetwork.init();
+        
+        MultiLayerNetwork tempTargetNetwork = new MultiLayerNetwork(conf);
+        tempTargetNetwork.init();
+        
+        // 复制主网络权重到目标网络
+        tempTargetNetwork.setParameters(tempMainNetwork.params().dup());
+        
+        // 使用反射设置final字段
+        try {
+            java.lang.reflect.Field mainNetworkField = this.getClass().getDeclaredField("mainNetwork");
+            mainNetworkField.setAccessible(true);
+            mainNetworkField.set(this, tempMainNetwork);
+            
+            java.lang.reflect.Field targetNetworkField = this.getClass().getDeclaredField("targetNetwork");
+            targetNetworkField.setAccessible(true);
+            targetNetworkField.set(this, tempTargetNetwork);
+        } catch (Exception e) {
+            throw new IOException("Failed to initialize networks during deserialization", e);
+        }
     }
 } 
