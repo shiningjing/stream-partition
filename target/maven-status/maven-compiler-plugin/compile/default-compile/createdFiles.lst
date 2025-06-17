@@ -1,4 +1,6 @@
 record\RecordStr.class
+correlation_clustering\CorrelationClustering$MonitoredProcessFunction.class
+partitioning\dqn\containers\SampleMeanStd.class
 sources\CircularFeed2files.class
 partitioning\CardinalityPartitioner.class
 partitioning\Hashing.class
@@ -20,6 +22,7 @@ correlation_clustering\stringsimilarity\Similarity.class
 correlation_clustering\clustering\Best.class
 partitioning\cAM.class
 partitioning\Shuffling.class
+correlation_clustering\CorrelationClustering$PerformanceMonitor.class
 wordCount\MapWordCount.class
 wordCount\WordCount$ForwardKeys.class
 partitioning\containers\PartialLoad.class
@@ -39,9 +42,11 @@ partitioning\dalton\containers\CountMinSketch.class
 correlation_clustering\containers\Cluster.class
 partitioning\Partitioner.class
 partitioning\containers\Worker.class
+partitioning\dqn\DQNPartitioner$TrainingSample.class
 helperfunctions\PARTITIONING_ALG.class
 partitioning\DAGreedy.class
 wordCount\WordCount$1.class
+partitioning\dqn\containers\ScaleReward.class
 correlation_clustering\SimilarityGraph$RecordSim.class
 partitioning\dqn\DQNPartitioner.class
 wordCount\WordCountMultiAgent.class
@@ -51,15 +56,13 @@ partitioning\dalton\DaltonCooperative.class
 correlation_clustering\containers\PartialClusteringOutput.class
 correlation_clustering\PartialWindowClustering.class
 wordCount\WordCount.class
-partitioning\dqn\DQNReplayMemory.class
 partitioning\dalton\DaltonCooperative$Frequency.class
 partitioning\dalton\containers\Qtable.class
 partitioning\dalton\ContextualBandits.class
+partitioning\dqn\containers\NormalizeObservation.class
 partitioning\dalton\containers\syncMessagePartitioners.class
 partitioning\dalton\QTableReducer.class
-partitioning\dqn\DQNPartitioner$TrainingExample.class
 correlation_clustering\clustering\Vote.class
-partitioning\dqn\DQNReplayMemory$DQNTransition.class
 partitioning\dalton\DaltonCooperative$Action.class
 wordCount\containers\WordCountState.class
 partitioning\dalton\containers\HotStatistics.class

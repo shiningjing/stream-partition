@@ -83,7 +83,7 @@ public class WordCount {
 
         // 设置方法名称并初始化文件
         public void setMethod(String methodName) {
-            this.logFilePath = "output/performance_metrics_" + methodName + "_" + System.currentTimeMillis() + ".csv";
+            this.logFilePath = "output/wordcount_Throughput_metrics_" + methodName + "_" + System.currentTimeMillis() + ".csv";
             try {
                 writer = new BufferedWriter(new FileWriter(logFilePath));
                 writer.write("timestamp,heapMemoryUsed,nonHeapMemoryUsed,recordsProcessed,throughput\n");

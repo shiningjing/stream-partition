@@ -20,6 +20,10 @@ package partitioning.dalton.state;
 
 import java.util.*;
 import java.io.Serializable;
+import java.io.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import partitioning.containers.PartialAssignment;
 import partitioning.containers.Worker;
@@ -56,6 +60,12 @@ public class State implements Serializable{
     private int maxSplit;
     private Set<Integer> hotMaxSplit;
 
+    // 添加输出相关字段
+    private static final long OUTPUT_INTERVAL_MS = 10000; // 10秒
+    private final AtomicLong lastOutputTime = new AtomicLong(0);
+    private transient BufferedWriter metricsWriter;
+    private final String metricsFileName;
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     public State(int size, int slide, int numWorkers, int estimatedNumKeys){
         workers = new ArrayList<>(numWorkers);
@@ -86,6 +96,81 @@ public class State implements Serializable{
 
         maxSplit = 2;
         hotMaxSplit = new HashSet<>(numWorkers);
+
+        // 初始化指标文件名
+        this.metricsFileName = "output/wordcount_partitioning_metrics_" + System.currentTimeMillis() + ".csv";
+        initializeMetricsWriter();
+    }
+
+    private void initializeMetricsWriter() {
+        try {
+            metricsWriter = new BufferedWriter(new FileWriter(metricsFileName));
+            // 写入CSV头
+            metricsWriter.write("Timestamp,LoadBalance,ReplicationFactor,MaxLoad,AvgLoad,MaxSplit");
+            for (int i = 0; i < numWorkers; i++) {
+                metricsWriter.write(",Load" + i);
+            }
+            metricsWriter.write("\n");
+        } catch (IOException e) {
+            System.err.println("Failed to initialize metrics writer: " + e.getMessage());
+        }
+    }
+    
+    private void writeMetrics() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastOutputTime.get() >= OUTPUT_INTERVAL_MS) {
+            try {
+                if (metricsWriter == null) {
+                    initializeMetricsWriter();
+                }
+                
+                // 计算指标
+                double loadBalance = calculateLoadBalance();
+                double replicationFactor = calculateReplicationFactor();
+                double maxLoad = maxLoad();
+                double avgLoad = avgLoad();
+                
+                // 写入CSV行
+                String timestamp = dateFormat.format(new Date(currentTime));
+                StringBuilder metricsLine = new StringBuilder();
+                metricsLine.append(String.format("%s,%.4f,%.4f,%.2f,%.2f,%d",
+                    timestamp, loadBalance, replicationFactor, maxLoad, avgLoad, maxSplit));
+                for (int i = 0; i < numWorkers; i++) {
+                    metricsLine.append("," + getLoad(i));
+                }
+                metricsLine.append("\n");
+                metricsWriter.write(metricsLine.toString());
+                metricsWriter.flush();
+                
+                lastOutputTime.set(currentTime);
+            } catch (IOException e) {
+                System.err.println("Failed to write metrics: " + e.getMessage());
+            }
+        }
+    }
+    
+    private double calculateLoadBalance() {
+        double maxLoad = 0;
+        double sumLoad = 0;
+        for (int i = 0; i < numWorkers; i++) {
+            double load = getLoad(i);
+            if (load > maxLoad) maxLoad = load;
+            sumLoad += load;
+        }
+        double avgLoad = sumLoad / numWorkers;
+        if (avgLoad == 0) return 0.0; // 避免除零
+        return (maxLoad - avgLoad) / avgLoad;
+    }
+    
+    private double calculateReplicationFactor() {
+        if (keyAssignmentsBitSet.isEmpty()) return 0.0;
+        
+        double totalReplicas = 0;
+        for (BitSet bs : keyAssignmentsBitSet.values()) {
+            totalReplicas += bs.cardinality();
+        }
+        
+        return totalReplicas / keyAssignmentsBitSet.size();
     }
 
     public int getExpirationTs(){
@@ -169,6 +254,9 @@ public class State implements Serializable{
         updateAssignments(tuple.getKeyId(), worker);
         aggrLoad++;
         workers.get(worker).updateState();
+        
+        // 在每次更新后检查是否需要输出指标
+        writeMetrics();
     }
 
     private void updateAssignments(int key, int worker){
@@ -206,15 +294,16 @@ public class State implements Serializable{
     }
 
     public double maxLoad(){
-        double maxL = 0;
-        double load;
-        for (int w=0; w<numWorkers; w++){
-            load = getLoad(w);
-            if (load > maxL){
-                maxL = load;
-            }
+        double maxLoad = 0;
+        double sumLoad = 0;
+        for (int i = 0; i < numWorkers; i++) {
+            double load = getLoad(i);
+            if (load > maxLoad) maxLoad = load;
+            sumLoad += load;
         }
-        return maxL;
+        double avgLoad = sumLoad / numWorkers;
+        double imbalance = (maxLoad - avgLoad) / avgLoad;
+        return maxLoad;
     }
 
     public double getLoad(int worker){
@@ -259,5 +348,28 @@ public class State implements Serializable{
 
     public void setHotInterval(int h){
         hotStatistics.setHotInterval(h);
+    }
+
+    // 添加关闭方法
+    public void close() {
+        try {
+            if (metricsWriter != null) {
+                metricsWriter.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to close metrics writer: " + e.getMessage());
+        }
+    }
+    
+    // 自定义序列化方法
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+    }
+    
+    // 自定义反序列化方法
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        lastOutputTime.set(0);
+        initializeMetricsWriter();
     }
 }
