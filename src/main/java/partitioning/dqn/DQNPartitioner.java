@@ -62,8 +62,8 @@ public class DQNPartitioner extends Partitioner {
     private final int actionSize;
     private static final double GAMMA = 0.99;
     private static final double EPSILON_START = 1.0;
-    private static final double EPSILON_END = 0.1;
-    private static final double EPSILON_DECAY = 0.995;
+    private static final double EPSILON_END = 0.05;
+    private static final double EPSILON_DECAY = 0.9999;
     private double epsilon;
     
     // 定时更新目标网络的参数
@@ -104,7 +104,7 @@ public class DQNPartitioner extends Partitioner {
     private static final double EPSILON = 1e-8; // 用于归一化的小常数
     
     // 批量训练相关
-    private static final int BATCH_SIZE = 32; // 批量训练的大小
+    private static final int BATCH_SIZE = 2; // 批量训练的大小
     private final List<TrainingSample> trainingBuffer = new ArrayList<>();
     
     // 训练样本类
@@ -173,9 +173,9 @@ public class DQNPartitioner extends Partitioner {
         int hiddenLayerSize = (stateSize + actionSize)*2;
 
         return new NeuralNetConfiguration.Builder()
-            .seed(123)
+            .seed(124)
             .weightInit(WeightInit.XAVIER)
-            .updater(new Adam(0.001))
+            .updater(new Adam(0.0001))
             .list()
             .layer(0, new DenseLayer.Builder()
                 .nIn(stateSize)
@@ -308,10 +308,17 @@ public class DQNPartitioner extends Partitioner {
             } else {
                 try {
                     networkLock.readLock().lock();
-                    INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
-                    INDArray qValues = targetNetwork.output(stateInput);
-                    worker = Nd4j.argMax(qValues, 1).getInt(0);
-                    System.out.println("key:"+keyId+",QValues: " + qValues + ", Selected worker: " + worker);
+                    if (Math.random() < epsilon) {
+                        // 探索：随机选一个worker
+                        worker = (int) (Math.random() * parallelism);
+                        System.out.println("key:" + keyId + ", [Exploration] Random worker: " + worker);
+                    } else {
+                        // 利用：选Q值最大的worker
+                        INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
+                        INDArray qValues = targetNetwork.output(stateInput);
+                        worker = Nd4j.argMax(qValues, 1).getInt(0);
+                        System.out.println("key:" + keyId + ", QValues: " + qValues + ", [Exploitation] Selected worker: " + worker);
+                    }
                 } finally {
                     networkLock.readLock().unlock();
                 }
@@ -425,9 +432,12 @@ public class DQNPartitioner extends Partitioner {
     private double[] buildStateVector(Record record) {
         double[] stateVector = new double[stateSize];
         
-        // 1. 负载信息
+        // 1. 计算负载平衡信息
+        double avgLoad = state.avgLoad();
         for (int i = 0; i < parallelism; i++) {
-            stateVector[i] = state.getLoad(i);
+            double workerLoad = state.getLoad(i);
+            // 计算每个节点的负载偏差率
+            stateVector[i] = avgLoad > 0 ? (workerLoad - avgLoad) / avgLoad : 0.0;
         }
         
         // 2. 分片情况 - 使用完整的分片向量而不是单一比例
@@ -450,22 +460,22 @@ public class DQNPartitioner extends Partitioner {
         // 1. 负载均衡奖励
         double avgLoad = state.avgLoad();
         double L = state.getLoad(action);
-        double loadDiff = (L - avgLoad)/Math.max(L,avgLoad);
-        reward -= loadDiff*10;
+        double loadDiff = (L - avgLoad)/avgLoad;
+        reward -= loadDiff * 0.5;
         
         // 2. 分片惩罚
         double fragmentation = state.keyfragmentation(record.getKeyId()).cardinality() / (double)parallelism;
-        reward -= fragmentation * 10;
+        reward -= fragmentation * 0.5;
 
-        return reward;
+
         // 4. 对奖励进行缩放归一化（如果缩放器可用）
-        /*if (rewardScaler != null) {
+        if (rewardScaler != null) {
             return rewardScaler.process(reward, false); // 在流处理中通常不会终止
         } else {
             throw new IllegalStateException("奖励缩放器未初始化，无法处理奖励值");
         }
         
-         */
+
 
         
     }
