@@ -78,14 +78,12 @@ public class DQNPartitioner extends Partitioner {
     private transient boolean executorsInitialized = false;
     private final ReentrantReadWriteLock networkLock = new ReentrantReadWriteLock();
     
-    // 热键缓存结构
-    private final ConcurrentHashMap<Integer, List<Record>> hotKeyBuffer = new ConcurrentHashMap<>();
-    private static final int HOT_KEY_BATCH_SIZE = 2; // 热键处理批次大小
-    private final AtomicBoolean isProcessingHotKeys = new AtomicBoolean(false);
+    // 记录计数器，用于触发训练
+    private final AtomicLong recordCounter = new AtomicLong(0);
     
-    // 添加并行处理线程数
-    private static final int PARALLEL_PROCESSING_THREADS = 4;
-    private transient ExecutorService hotKeyExecutor;
+    // 添加记录缓存，用于批量训练
+    private final transient List<TrainingRecord> recordBuffer = new ArrayList<>();
+    private final transient Object recordBufferLock = new Object();
     
     // 路由表：缓存键到worker的映射
     private final Map<Integer, Integer> routingTable = new ConcurrentHashMap<>();
@@ -96,7 +94,7 @@ public class DQNPartitioner extends Partitioner {
     private final AtomicLong routingTableMisses = new AtomicLong(0);
     
     // 添加LRU缓存大小限制
-    private static final int MAX_ROUTING_TABLE_SIZE = 10000;
+    private static final int MAX_ROUTING_TABLE_SIZE = 1000;
     
     // 归一化组件
     private final transient NormalizeObservation obsNormalizer;
@@ -104,16 +102,34 @@ public class DQNPartitioner extends Partitioner {
     private static final double EPSILON = 1e-8; // 用于归一化的小常数
     
     // 批量训练相关
-    private static final int BATCH_SIZE = 2; // 批量训练的大小
-    private final List<TrainingSample> trainingBuffer = new ArrayList<>();
+    private static final int BATCH_SIZE = 128; // 批量训练的大小，也用于记录触发训练
     
-    // 训练样本类
-    private static class TrainingSample {
+    // 时间统计相关
+    private final AtomicLong totalRecords = new AtomicLong(0);
+    private final AtomicLong hotKeyCount = new AtomicLong(0);
+    private final AtomicLong nonHotKeyCount = new AtomicLong(0);
+    private final AtomicLong routingTableHitCount = new AtomicLong(0);
+    private final AtomicLong neuralNetworkInferenceCount = new AtomicLong(0);
+    
+    // 时间统计（纳秒）
+    private final AtomicLong totalHotKeyDetectionTime = new AtomicLong(0);
+    private final AtomicLong totalRoutingTableLookupTime = new AtomicLong(0);
+    private final AtomicLong totalStateVectorBuildTime = new AtomicLong(0);
+    private final AtomicLong totalNeuralNetworkInferenceTime = new AtomicLong(0);
+    private final AtomicLong totalRewardCalculationTime = new AtomicLong(0);
+    private final AtomicLong totalTrainingRecordTime = new AtomicLong(0);
+    private final AtomicLong totalStateUpdateTime = new AtomicLong(0);
+    
+    // 统计输出频率
+    private static final int STATS_OUTPUT_FREQUENCY = 1000; // 每1000条记录输出一次统计
+    
+    // 训练记录类
+    private static class TrainingRecord implements java.io.Serializable {
         final double[] stateVector;
         final int action;
         final double reward;
         
-        TrainingSample(double[] stateVector, int action, double reward) {
+        TrainingRecord(double[] stateVector, int action, double reward) {
             this.stateVector = stateVector;
             this.action = action;
             this.reward = reward;
@@ -160,7 +176,6 @@ public class DQNPartitioner extends Partitioner {
         if (!executorsInitialized) {
             trainingExecutor = Executors.newSingleThreadExecutor();
             inferenceExecutor = Executors.newSingleThreadExecutor();
-            hotKeyExecutor = Executors.newFixedThreadPool(PARALLEL_PROCESSING_THREADS);
             executorsInitialized = true;
         }
     }
@@ -173,7 +188,7 @@ public class DQNPartitioner extends Partitioner {
         int hiddenLayerSize = (stateSize + actionSize)*2;
 
         return new NeuralNetConfiguration.Builder()
-            .seed(124)
+            .seed(123)
             .weightInit(WeightInit.XAVIER)
             .updater(new Adam(0.0001))
             .list()
@@ -257,13 +272,13 @@ public class DQNPartitioner extends Partitioner {
         if (inferenceExecutor != null) {
             inferenceExecutor.shutdown();
         }
-        if (hotKeyExecutor != null) {
-            hotKeyExecutor.shutdown();
-        }
     }
     
     @Override
     public void flatMap(Record record, Collector<Tuple2<Integer, Record>> out) throws Exception {
+        long startTime = System.nanoTime();
+        totalRecords.incrementAndGet();
+        
         // 确保ExecutorService已初始化
         if (!executorsInitialized) {
             initializeExecutors();
@@ -273,35 +288,54 @@ public class DQNPartitioner extends Partitioner {
         int worker;
         
         // 1. 热键检查
+        long hotKeyStartTime = System.nanoTime();
         boolean isHot = state.isHot(record, null) == 1;
         
         // 新增：滑动窗口过期机制
         state.updateExpired(record, isHot);
+        long hotKeyEndTime = System.nanoTime();
+        totalHotKeyDetectionTime.addAndGet(hotKeyEndTime - hotKeyStartTime);
         
         // 预先构建状态向量，避免重复计算
         double[] stateVector = null;
         
         if (!isHot) {
             // 非热键使用简单哈希分区
+            nonHotKeyCount.incrementAndGet();
             worker = Math.abs(keyId % parallelism);
+            
             // 更新状态
+            long stateUpdateStartTime = System.nanoTime();
             state.update(record, worker);
+            long stateUpdateEndTime = System.nanoTime();
+            totalStateUpdateTime.addAndGet(stateUpdateEndTime - stateUpdateStartTime);
+            
             // 直接输出结果
             out.collect(new Tuple2<>(worker, record));
             return;
         }
         
+        hotKeyCount.incrementAndGet();
+        
         // 2. 热键处理 - 首先检查路由表
+        long routingStartTime = System.nanoTime();
         if (routingTableValid.get() && routingTable.containsKey(keyId)) {
             // 使用缓存的路由结果
             worker = routingTable.get(keyId);
             routingTableHits.incrementAndGet();
+            routingTableHitCount.incrementAndGet();
         } else {
             // 路由表中没有或已失效，需要进行神经网络推理
             routingTableMisses.incrementAndGet();
+            
+            // 构建状态向量
+            long stateVectorStartTime = System.nanoTime();
             stateVector = buildStateVector(record);
+            long stateVectorEndTime = System.nanoTime();
+            totalStateVectorBuildTime.addAndGet(stateVectorEndTime - stateVectorStartTime);
             
             // 使用目标网络进行推理
+            long neuralStartTime = System.nanoTime();
             if (targetNetwork == null) {
                 // 网络未初始化，使用简单哈希分区
                 worker = Math.abs(keyId % parallelism);
@@ -311,37 +345,65 @@ public class DQNPartitioner extends Partitioner {
                     if (Math.random() < epsilon) {
                         // 探索：随机选一个worker
                         worker = (int) (Math.random() * parallelism);
-                        System.out.println("key:" + keyId + ", [Exploration] Random worker: " + worker);
+                        //System.out.println("key:" + keyId + ", [Exploration] Random worker: " + worker);
                     } else {
                         // 利用：选Q值最大的worker
                         INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
+                        //System.out.println("key:" + keyId + ", stateinput: " +stateInput);
                         INDArray qValues = targetNetwork.output(stateInput);
                         worker = Nd4j.argMax(qValues, 1).getInt(0);
-                        System.out.println("key:" + keyId + ", QValues: " + qValues + ", [Exploitation] Selected worker: " + worker);
+                        //System.out.println("key:" + keyId + ", QValues: " + qValues + ", [Exploitation] Selected worker: " + worker);
                     }
                 } finally {
                     networkLock.readLock().unlock();
                 }
             }
+            long neuralEndTime = System.nanoTime();
+            totalNeuralNetworkInferenceTime.addAndGet(neuralEndTime - neuralStartTime);
+            neuralNetworkInferenceCount.incrementAndGet();
             
             // 将结果缓存到路由表
             if (routingTableValid.get()) {
                 updateRoutingTable(keyId, worker);
             }
         }
+        long routingEndTime = System.nanoTime();
+        totalRoutingTableLookupTime.addAndGet(routingEndTime - routingStartTime);
         
-        // 3. 热键缓冲区处理
-        hotKeyBuffer.computeIfAbsent(keyId, k -> new ArrayList<>())
-                    .add(new Record(keyId, record.getTs()));
+        // 3. 记录状态和动作用于训练（只对热键进行训练）
+        if (stateVector == null) {
+            long stateVectorStartTime = System.nanoTime();
+            stateVector = buildStateVector(record);
+            long stateVectorEndTime = System.nanoTime();
+            totalStateVectorBuildTime.addAndGet(stateVectorEndTime - stateVectorStartTime);
+        }
         
-        // 检查是否需要处理热键进行批量训练
-        int totalHotKeys = hotKeyBuffer.keySet().size();
-        if (totalHotKeys >= HOT_KEY_BATCH_SIZE && !isProcessingHotKeys.get()) {
-            processHotKeysForTraining();
+        // 计算奖励并记录训练样本
+        long rewardStartTime = System.nanoTime();
+        double reward = calculateReward(record, worker);
+        long rewardEndTime = System.nanoTime();
+        totalRewardCalculationTime.addAndGet(rewardEndTime - rewardStartTime);
+        
+        long trainingStartTime = System.nanoTime();
+        trainMainNetwork(stateVector, worker, reward);
+        long trainingEndTime = System.nanoTime();
+        totalTrainingRecordTime.addAndGet(trainingEndTime - trainingStartTime);
+        
+        // 增加记录计数器
+        long currentRecordCount = recordCounter.incrementAndGet();
+        
+        // 检查是否需要触发批量训练 - 每BATCH_SIZE个记录触发一次
+        if (currentRecordCount >= BATCH_SIZE) {
+            // 重置计数器
+            recordCounter.set(0);
         }
         
         // 4. 更新状态并输出结果
+        long stateUpdateStartTime = System.nanoTime();
         state.update(record, worker);
+        long stateUpdateEndTime = System.nanoTime();
+        totalStateUpdateTime.addAndGet(stateUpdateEndTime - stateUpdateStartTime);
+        
         out.collect(new Tuple2<>(worker, record));
         
         // 更新探索率
@@ -353,82 +415,13 @@ public class DQNPartitioner extends Partitioner {
             copyNetworkWeights();
             sampleCounter = 0;
         }
-    }
-    
-    /**
-     * 处理积累的热键用于训练
-     */
-    private void processHotKeysForTraining() {
-        if (isProcessingHotKeys.compareAndSet(false, true)) {
-            hotKeyExecutor.submit(() -> {
-                try {
-                    // 获取所有等待处理的热键
-                    List<Integer> keyIds = new ArrayList<>(hotKeyBuffer.keySet());
-                    
-                    // 并行处理热键
-                    List<CompletableFuture<Void>> futures = new ArrayList<>();
-                    
-                    for (Integer keyId : keyIds) {
-                        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                            List<Record> records = hotKeyBuffer.get(keyId);
-                            if (records != null && !records.isEmpty()) {
-                                processHotKeyRecords(keyId, records);
-                            }
-                        }, hotKeyExecutor);
-                        
-                        futures.add(future);
-                    }
-                    
-                    // 等待所有处理完成
-                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-                    
-                } catch (Exception e) {
-                    System.err.println("热键处理过程中发生错误: " + e.getMessage());
-                    e.printStackTrace();
-                } finally {
-                    isProcessingHotKeys.set(false);
-                    
-                    // 检查是否还有足够的热键继续处理
-                    if (hotKeyBuffer.size() >= HOT_KEY_BATCH_SIZE) {
-                        processHotKeysForTraining();
-                    }
-                }
-            });
-        }
-    }
-    
-    /**
-     * 处理单个热键的记录
-     */
-    private void processHotKeyRecords(Integer keyId, List<Record> records) {
-        for (Record record : records) {
-            // 构建状态向量
-            double[] stateVector = buildStateVector(record);
-            
-            // 使用目标网络进行推理
-            int bestWorker;
-            if (targetNetwork == null) {
-                bestWorker = Math.abs(record.getKeyId() % parallelism);
-            } else {
-                try {
-                    networkLock.readLock().lock();
-                    INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
-                    INDArray qValues = targetNetwork.output(stateInput);
-                    bestWorker = Nd4j.argMax(qValues, 1).getInt(0);
-                } finally {
-                    networkLock.readLock().unlock();
-                }
-            }
-            
-            // 计算奖励并直接训练网络
-            double reward = calculateReward(record, bestWorker);
-            trainMainNetwork(stateVector, bestWorker, reward);
-        }
         
-        // 清除已处理的记录
-        hotKeyBuffer.remove(keyId);
+        // 输出统计信息
+        if (totalRecords.get() % STATS_OUTPUT_FREQUENCY == 0) {
+            printStatistics();
+        }
     }
-
+    
     private double[] buildStateVector(Record record) {
         double[] stateVector = new double[stateSize];
         
@@ -495,14 +488,14 @@ public class DQNPartitioner extends Partitioner {
         }
         
         // 添加训练样本到缓冲区
-        synchronized (trainingBuffer) {
-            trainingBuffer.add(new TrainingSample(stateVector, action, reward));
+        synchronized (recordBuffer) {
+            recordBuffer.add(new TrainingRecord(stateVector, action, reward));
             
             // 如果缓冲区达到批量大小，启动训练
-            if (trainingBuffer.size() >= BATCH_SIZE && !isTraining.get()) {
+            if (recordBuffer.size() >= BATCH_SIZE && !isTraining.get()) {
                 // 复制当前缓冲区的内容
-                List<TrainingSample> batch = new ArrayList<>(trainingBuffer);
-                trainingBuffer.clear();
+                List<TrainingRecord> batch = new ArrayList<>(recordBuffer);
+                recordBuffer.clear();
                 
                 // 异步执行批量训练
                 trainingExecutor.submit(() -> trainBatch(batch));
@@ -513,7 +506,7 @@ public class DQNPartitioner extends Partitioner {
     /**
      * 批量训练主网络
      */
-    private void trainBatch(List<TrainingSample> batch) {
+    private void trainBatch(List<TrainingRecord> batch) {
         if (isTraining.compareAndSet(false, true)) {
             try {
                 networkLock.writeLock().lock();
@@ -525,7 +518,7 @@ public class DQNPartitioner extends Partitioner {
                 
                 // 2. 填充状态输入和目标Q值
                 for (int i = 0; i < batchSize; i++) {
-                    TrainingSample sample = batch.get(i);
+                    TrainingRecord sample = batch.get(i);
                     
                     // 填充状态输入
                     stateInputs.putRow(i, Nd4j.create(sample.stateVector));
@@ -568,6 +561,19 @@ public class DQNPartitioner extends Partitioner {
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
         in.defaultReadObject();
         executorsInitialized = false;  // 将在下一次调用时重新初始化
+        
+        // 重新初始化记录缓冲区
+        try {
+            java.lang.reflect.Field recordBufferField = this.getClass().getDeclaredField("recordBuffer");
+            recordBufferField.setAccessible(true);
+            recordBufferField.set(this, new ArrayList<>());
+            
+            java.lang.reflect.Field recordBufferLockField = this.getClass().getDeclaredField("recordBufferLock");
+            recordBufferLockField.setAccessible(true);
+            recordBufferLockField.set(this, new Object());
+        } catch (Exception e) {
+            throw new IOException("Failed to initialize record buffer during deserialization", e);
+        }
         
         // 重新初始化网络
         MultiLayerConfiguration conf = createNetworkConfig();
@@ -626,5 +632,69 @@ public class DQNPartitioner extends Partitioner {
         }
         
         routingTable.put(keyId, worker);
+    }
+
+    /**
+     * 输出性能统计信息
+     */
+    private void printStatistics() {
+        long total = totalRecords.get();
+        long hotKeys = hotKeyCount.get();
+        long nonHotKeys = nonHotKeyCount.get();
+        long routingHits = routingTableHitCount.get();
+        long neuralInferences = neuralNetworkInferenceCount.get();
+        
+        if (total == 0) return;
+        
+        double hotKeyRatio = (double) hotKeys / total * 100;
+        double routingHitRatio = hotKeys > 0 ? (double) routingHits / hotKeys * 100 : 0;
+        
+        System.out.println("=== DQN Partitioner 性能统计 ===");
+        System.out.printf("总记录数: %d\n", total);
+        System.out.printf("热键比例: %.2f%% (%d/%d)\n", hotKeyRatio, hotKeys, total);
+        System.out.printf("路由表命中率: %.2f%% (%d/%d)\n", routingHitRatio, routingHits, hotKeys);
+        System.out.printf("神经网络推理次数: %d\n", neuralInferences);
+        
+        // 时间统计（微秒）
+        if (hotKeys > 0) {
+            System.out.println("\n--- 平均执行时间 (微秒) ---");
+            System.out.printf("热键检测: %.2f\n", totalHotKeyDetectionTime.get() / 1000.0 / total);
+            System.out.printf("路由表查找: %.2f\n", totalRoutingTableLookupTime.get() / 1000.0 / hotKeys);
+            System.out.printf("状态向量构建: %.2f\n", totalStateVectorBuildTime.get() / 1000.0 / hotKeys);
+            System.out.printf("神经网络推理: %.2f\n", neuralInferences > 0 ? totalNeuralNetworkInferenceTime.get() / 1000.0 / neuralInferences : 0.0);
+            System.out.printf("奖励计算: %.2f\n", totalRewardCalculationTime.get() / 1000.0 / hotKeys);
+            System.out.printf("训练记录: %.2f\n", totalTrainingRecordTime.get() / 1000.0 / hotKeys);
+            System.out.printf("状态更新: %.2f\n", totalStateUpdateTime.get() / 1000.0 / total);
+        }
+        
+        // 计算总时间分布（微秒）
+        long totalHotKeyTime = totalHotKeyDetectionTime.get();
+        long totalRoutingTime = totalRoutingTableLookupTime.get();
+        long totalStateVectorTime = totalStateVectorBuildTime.get();
+        long totalNeuralTime = totalNeuralNetworkInferenceTime.get();
+        long totalRewardTime = totalRewardCalculationTime.get();
+        long totalTrainingTime = totalTrainingRecordTime.get();
+        long totalStateUpdateTime = this.totalStateUpdateTime.get();
+        
+        long totalProcessingTime = totalHotKeyTime + totalRoutingTime + totalStateVectorTime + 
+                                 totalNeuralTime + totalRewardTime + totalTrainingTime + totalStateUpdateTime;
+        
+        if (totalProcessingTime > 0) {
+            System.out.println("\n--- 总执行时间 (微秒) ---");
+            System.out.printf("热键检测: %.2f\n", totalHotKeyTime / 1000.0);
+            System.out.printf("路由表查找: %.2f\n", totalRoutingTime / 1000.0);
+            System.out.printf("状态向量构建: %.2f\n", totalStateVectorTime / 1000.0);
+            System.out.printf("神经网络推理: %.2f\n", totalNeuralTime / 1000.0);
+            System.out.printf("奖励计算: %.2f\n", totalRewardTime / 1000.0);
+            System.out.printf("训练记录: %.2f\n", totalTrainingTime / 1000.0);
+            System.out.printf("状态更新: %.2f\n", totalStateUpdateTime / 1000.0);
+            System.out.printf("总处理时间: %.2f\n", totalProcessingTime / 1000.0);
+        }
+        
+        // 计算每条记录的平均总处理时间
+        double avgTotalTime = totalProcessingTime / 1000.0 / total;
+        System.out.printf("\n每条记录平均总处理时间: %.2f 微秒\n", avgTotalTime);
+        
+        System.out.println("================================\n");
     }
 } 

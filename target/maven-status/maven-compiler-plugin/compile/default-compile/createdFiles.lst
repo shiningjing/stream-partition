@@ -39,10 +39,10 @@ partitioning\containers\PartialAssignment.class
 sources\CircularFeed.class
 record\Record.class
 partitioning\dalton\containers\CountMinSketch.class
+partitioning\dqn\DQNPartitioner$TrainingRecord.class
 correlation_clustering\containers\Cluster.class
 partitioning\Partitioner.class
 partitioning\containers\Worker.class
-partitioning\dqn\DQNPartitioner$TrainingSample.class
 helperfunctions\PARTITIONING_ALG.class
 partitioning\DAGreedy.class
 wordCount\WordCount$1.class
