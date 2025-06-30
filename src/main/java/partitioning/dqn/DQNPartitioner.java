@@ -97,31 +97,20 @@ public class DQNPartitioner extends Partitioner {
     private static final int MAX_ROUTING_TABLE_SIZE = 1000;
     
     // 归一化组件
-    private final transient NormalizeObservation obsNormalizer;
-    private final transient ScaleReward rewardScaler;
+    //private final transient NormalizeObservation obsNormalizer;
+    //private final transient ScaleReward rewardScaler;
     private static final double EPSILON = 1e-8; // 用于归一化的小常数
     
     // 批量训练相关
-    private static final int BATCH_SIZE = 128; // 批量训练的大小，也用于记录触发训练
+    private static final int BATCH_SIZE = 32; // 批量训练的大小，也用于记录触发训练
     
-    // 时间统计相关
-    private final AtomicLong totalRecords = new AtomicLong(0);
-    private final AtomicLong hotKeyCount = new AtomicLong(0);
-    private final AtomicLong nonHotKeyCount = new AtomicLong(0);
-    private final AtomicLong routingTableHitCount = new AtomicLong(0);
-    private final AtomicLong neuralNetworkInferenceCount = new AtomicLong(0);
-    
-    // 时间统计（纳秒）
-    private final AtomicLong totalHotKeyDetectionTime = new AtomicLong(0);
-    private final AtomicLong totalRoutingTableLookupTime = new AtomicLong(0);
-    private final AtomicLong totalStateVectorBuildTime = new AtomicLong(0);
-    private final AtomicLong totalNeuralNetworkInferenceTime = new AtomicLong(0);
-    private final AtomicLong totalRewardCalculationTime = new AtomicLong(0);
-    private final AtomicLong totalTrainingRecordTime = new AtomicLong(0);
-    private final AtomicLong totalStateUpdateTime = new AtomicLong(0);
-    
-    // 统计输出频率
-    private static final int STATS_OUTPUT_FREQUENCY = 1000; // 每1000条记录输出一次统计
+    // 添加时间统计变量
+    private final AtomicLong hotKeyCheckTime = new AtomicLong(0);
+    private final AtomicLong routingTableTime = new AtomicLong(0);
+    private final AtomicLong neuralNetworkTime = new AtomicLong(0);
+    private final AtomicLong trainingTime = new AtomicLong(0);
+    private final AtomicLong totalProcessingTime = new AtomicLong(0);
+    private final AtomicLong recordCount = new AtomicLong(0);
     
     // 训练记录类
     private static class TrainingRecord implements java.io.Serializable {
@@ -160,13 +149,11 @@ public class DQNPartitioner extends Partitioner {
         initializeExecutors();
         
         // 初始化归一化组件
-        this.obsNormalizer = new NormalizeObservation(stateSize, EPSILON);
-        this.rewardScaler = new ScaleReward(GAMMA, EPSILON);
+        //this.obsNormalizer = new NormalizeObservation(stateSize, EPSILON);
+        //this.rewardScaler = new ScaleReward(GAMMA, EPSILON);
         
         // 验证归一化组件已正确初始化
-        if (this.obsNormalizer == null || this.rewardScaler == null) {
-            throw new IllegalStateException("归一化组件初始化失败");
-        }
+       // if (this.obsNormalizer == null || this.rewardScaler == null) {throw new IllegalStateException("归一化组件初始化失败");}
     }
     
     /**
@@ -249,18 +236,7 @@ public class DQNPartitioner extends Partitioner {
        
     }
     
-    /**
-     * 检查归一化组件是否已正确初始化
-     * @throws IllegalStateException 如果任何归一化组件未初始化
-     */
-    private void validateNormalizationComponents() {
-        if (obsNormalizer == null) {
-            throw new IllegalStateException("观察值归一化器未初始化");
-        }
-        if (rewardScaler == null) {
-            throw new IllegalStateException("奖励缩放器未初始化");
-        }
-    }
+
     
     /**
      * 在关闭时清理资源
@@ -277,7 +253,6 @@ public class DQNPartitioner extends Partitioner {
     @Override
     public void flatMap(Record record, Collector<Tuple2<Integer, Record>> out) throws Exception {
         long startTime = System.nanoTime();
-        totalRecords.incrementAndGet();
         
         // 确保ExecutorService已初始化
         if (!executorsInitialized) {
@@ -287,138 +262,91 @@ public class DQNPartitioner extends Partitioner {
         int keyId = record.getKeyId();
         int worker;
         
-        // 1. 热键检查
-        long hotKeyStartTime = System.nanoTime();
+        // 1. 热键检查时间统计
+        long hotKeyCheckStart = System.nanoTime();
         boolean isHot = state.isHot(record, null) == 1;
-        
-        // 新增：滑动窗口过期机制
         state.updateExpired(record, isHot);
-        long hotKeyEndTime = System.nanoTime();
-        totalHotKeyDetectionTime.addAndGet(hotKeyEndTime - hotKeyStartTime);
+        hotKeyCheckTime.addAndGet(System.nanoTime() - hotKeyCheckStart);
         
-        // 预先构建状态向量，避免重复计算
         double[] stateVector = null;
         
         if (!isHot) {
-            // 非热键使用简单哈希分区
-            nonHotKeyCount.incrementAndGet();
             worker = Math.abs(keyId % parallelism);
-            
-            // 更新状态
-            long stateUpdateStartTime = System.nanoTime();
             state.update(record, worker);
-            long stateUpdateEndTime = System.nanoTime();
-            totalStateUpdateTime.addAndGet(stateUpdateEndTime - stateUpdateStartTime);
-            
-            // 直接输出结果
             out.collect(new Tuple2<>(worker, record));
+            totalProcessingTime.addAndGet(System.nanoTime() - startTime);
+            recordCount.incrementAndGet();
             return;
         }
         
-        hotKeyCount.incrementAndGet();
-        
-        // 2. 热键处理 - 首先检查路由表
-        long routingStartTime = System.nanoTime();
+        // 2. 路由表查询时间统计
+        long routingStart = System.nanoTime();
         if (routingTableValid.get() && routingTable.containsKey(keyId)) {
-            // 使用缓存的路由结果
             worker = routingTable.get(keyId);
             routingTableHits.incrementAndGet();
-            routingTableHitCount.incrementAndGet();
         } else {
-            // 路由表中没有或已失效，需要进行神经网络推理
             routingTableMisses.incrementAndGet();
-            
-            // 构建状态向量
-            long stateVectorStartTime = System.nanoTime();
             stateVector = buildStateVector(record);
-            long stateVectorEndTime = System.nanoTime();
-            totalStateVectorBuildTime.addAndGet(stateVectorEndTime - stateVectorStartTime);
             
-            // 使用目标网络进行推理
-            long neuralStartTime = System.nanoTime();
+            // 3. 神经网络推理时间统计
+            long nnStart = System.nanoTime();
             if (targetNetwork == null) {
-                // 网络未初始化，使用简单哈希分区
                 worker = Math.abs(keyId % parallelism);
             } else {
                 try {
                     networkLock.readLock().lock();
                     if (Math.random() < epsilon) {
-                        // 探索：随机选一个worker
                         worker = (int) (Math.random() * parallelism);
-                        //System.out.println("key:" + keyId + ", [Exploration] Random worker: " + worker);
                     } else {
-                        // 利用：选Q值最大的worker
                         INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
-                        //System.out.println("key:" + keyId + ", stateinput: " +stateInput);
                         INDArray qValues = targetNetwork.output(stateInput);
                         worker = Nd4j.argMax(qValues, 1).getInt(0);
-                        //System.out.println("key:" + keyId + ", QValues: " + qValues + ", [Exploitation] Selected worker: " + worker);
                     }
                 } finally {
                     networkLock.readLock().unlock();
                 }
             }
-            long neuralEndTime = System.nanoTime();
-            totalNeuralNetworkInferenceTime.addAndGet(neuralEndTime - neuralStartTime);
-            neuralNetworkInferenceCount.incrementAndGet();
+            neuralNetworkTime.addAndGet(System.nanoTime() - nnStart);
             
-            // 将结果缓存到路由表
             if (routingTableValid.get()) {
                 updateRoutingTable(keyId, worker);
             }
         }
-        long routingEndTime = System.nanoTime();
-        totalRoutingTableLookupTime.addAndGet(routingEndTime - routingStartTime);
+        routingTableTime.addAndGet(System.nanoTime() - routingStart);
         
-        // 3. 记录状态和动作用于训练（只对热键进行训练）
+        // 4. 训练时间统计
+        long trainingStart = System.nanoTime();
         if (stateVector == null) {
-            long stateVectorStartTime = System.nanoTime();
             stateVector = buildStateVector(record);
-            long stateVectorEndTime = System.nanoTime();
-            totalStateVectorBuildTime.addAndGet(stateVectorEndTime - stateVectorStartTime);
         }
         
-        // 计算奖励并记录训练样本
-        long rewardStartTime = System.nanoTime();
         double reward = calculateReward(record, worker);
-        long rewardEndTime = System.nanoTime();
-        totalRewardCalculationTime.addAndGet(rewardEndTime - rewardStartTime);
-        
-        long trainingStartTime = System.nanoTime();
         trainMainNetwork(stateVector, worker, reward);
-        long trainingEndTime = System.nanoTime();
-        totalTrainingRecordTime.addAndGet(trainingEndTime - trainingStartTime);
         
-        // 增加记录计数器
         long currentRecordCount = recordCounter.incrementAndGet();
         
-        // 检查是否需要触发批量训练 - 每BATCH_SIZE个记录触发一次
         if (currentRecordCount >= BATCH_SIZE) {
-            // 重置计数器
             recordCounter.set(0);
         }
+        trainingTime.addAndGet(System.nanoTime() - trainingStart);
         
-        // 4. 更新状态并输出结果
-        long stateUpdateStartTime = System.nanoTime();
         state.update(record, worker);
-        long stateUpdateEndTime = System.nanoTime();
-        totalStateUpdateTime.addAndGet(stateUpdateEndTime - stateUpdateStartTime);
-        
         out.collect(new Tuple2<>(worker, record));
         
-        // 更新探索率
         epsilon = Math.max(EPSILON_END, epsilon * EPSILON_DECAY);
         
-        // 更新样本计数器并检查是否需要更新目标网络
         sampleCounter++;
         if (sampleCounter >= TARGET_UPDATE_FREQUENCY) {
             copyNetworkWeights();
             sampleCounter = 0;
         }
         
-        // 输出统计信息
-        if (totalRecords.get() % STATS_OUTPUT_FREQUENCY == 0) {
-            printStatistics();
+        totalProcessingTime.addAndGet(System.nanoTime() - startTime);
+        recordCount.incrementAndGet();
+        
+        // 每处理1000条记录输出一次统计信息
+        if (recordCount.get() % 1000 == 0) {
+            printTimingStats();
         }
     }
     
@@ -440,12 +368,12 @@ public class DQNPartitioner extends Partitioner {
         }
         
         // 3. 对状态向量进行归一化（如果归一化器可用）
-        if (obsNormalizer != null) {
-            return obsNormalizer.process(stateVector);
-        } else {
-            throw new IllegalStateException("观察值归一化器未初始化，无法处理状态向量");
-        }
-    }
+       //if (obsNormalizer != null) {
+            //return obsNormalizer.process(stateVector);
+            //} else {// 归一化器未初始化时，直接返回原始状态向量
+            return stateVector;
+            //}
+}
 
     private double calculateReward(Record record, int action) {
         double reward = 0.0;
@@ -461,15 +389,12 @@ public class DQNPartitioner extends Partitioner {
         reward -= fragmentation * 0.5;
 
 
-        // 4. 对奖励进行缩放归一化（如果缩放器可用）
-        if (rewardScaler != null) {
-            return rewardScaler.process(reward, false); // 在流处理中通常不会终止
-        } else {
-            throw new IllegalStateException("奖励缩放器未初始化，无法处理奖励值");
-        }
-        
-
-
+        // 3. 对奖励进行缩放归一化（如果缩放器可用）
+       //if (rewardScaler != null) {
+            //return rewardScaler.process(reward, false); // 在流处理中通常不会终止
+        //} else { // 奖励缩放器未初始化时，直接返回原始reward
+            return reward;
+//}
         
     }
 
@@ -599,7 +524,7 @@ public class DQNPartitioner extends Partitioner {
             targetNetworkField.set(this, tempTargetNetwork);
             
             // 重新初始化归一化组件
-            java.lang.reflect.Field obsNormalizerField = this.getClass().getDeclaredField("obsNormalizer");
+            /*java.lang.reflect.Field obsNormalizerField = this.getClass().getDeclaredField("obsNormalizer");
             obsNormalizerField.setAccessible(true);
             obsNormalizerField.set(this, new NormalizeObservation(stateSize, EPSILON));
             
@@ -611,6 +536,8 @@ public class DQNPartitioner extends Partitioner {
             if (obsNormalizerField.get(this) == null || rewardScalerField.get(this) == null) {
                 throw new IOException("反序列化后归一化组件初始化失败");
             }
+
+             */
             
         } catch (Exception e) {
             throw new IOException("Failed to initialize networks and normalizers during deserialization", e);
@@ -633,68 +560,41 @@ public class DQNPartitioner extends Partitioner {
         
         routingTable.put(keyId, worker);
     }
-
+    
     /**
-     * 输出性能统计信息
+     * 打印时间统计信息
      */
-    private void printStatistics() {
-        long total = totalRecords.get();
-        long hotKeys = hotKeyCount.get();
-        long nonHotKeys = nonHotKeyCount.get();
-        long routingHits = routingTableHitCount.get();
-        long neuralInferences = neuralNetworkInferenceCount.get();
+    private void printTimingStats() {
+        long totalRecords = recordCount.get();
+        if (totalRecords == 0) return;
         
-        if (total == 0) return;
+        // 将纳秒转换为微秒 (1 微秒 = 1000 纳秒)
+        double avgTotal = totalProcessingTime.get() / (totalRecords * 1_000.0);
+        double avgHotKey = hotKeyCheckTime.get() / (totalRecords * 1_000.0);
+        double avgRouting = routingTableTime.get() / (totalRecords * 1_000.0);
+        double avgNN = neuralNetworkTime.get() / (totalRecords * 1_000.0);
+        double avgTraining = trainingTime.get() / (totalRecords * 1_000.0);
         
-        double hotKeyRatio = (double) hotKeys / total * 100;
-        double routingHitRatio = hotKeys > 0 ? (double) routingHits / hotKeys * 100 : 0;
+        System.out.printf("\n时间统计信息（每条记录平均时间，单位：微秒）：\n");
+        System.out.printf("总处理时间: %.3f\n", avgTotal);
+        System.out.printf("热键检查时间: %.3f\n", avgHotKey);
+        System.out.printf("路由表操作时间: %.3f\n", avgRouting);
+        System.out.printf("神经网络推理时间: %.3f\n", avgNN);
+        System.out.printf("训练时间: %.3f\n", avgTraining);
+        System.out.printf("已处理记录数: %d\n", totalRecords);
         
-        System.out.println("=== DQN Partitioner 性能统计 ===");
-        System.out.printf("总记录数: %d\n", total);
-        System.out.printf("热键比例: %.2f%% (%d/%d)\n", hotKeyRatio, hotKeys, total);
-        System.out.printf("路由表命中率: %.2f%% (%d/%d)\n", routingHitRatio, routingHits, hotKeys);
-        System.out.printf("神经网络推理次数: %d\n", neuralInferences);
+        double hitRate = routingTableHits.get() + routingTableMisses.get() > 0 
+            ? (double) routingTableHits.get() / (routingTableHits.get() + routingTableMisses.get()) * 100 
+            : 0.0;
+        System.out.printf("路由表命中率: %.2f%%\n", hitRate);
         
-        // 时间统计（微秒）
-        if (hotKeys > 0) {
-            System.out.println("\n--- 平均执行时间 (微秒) ---");
-            System.out.printf("热键检测: %.2f\n", totalHotKeyDetectionTime.get() / 1000.0 / total);
-            System.out.printf("路由表查找: %.2f\n", totalRoutingTableLookupTime.get() / 1000.0 / hotKeys);
-            System.out.printf("状态向量构建: %.2f\n", totalStateVectorBuildTime.get() / 1000.0 / hotKeys);
-            System.out.printf("神经网络推理: %.2f\n", neuralInferences > 0 ? totalNeuralNetworkInferenceTime.get() / 1000.0 / neuralInferences : 0.0);
-            System.out.printf("奖励计算: %.2f\n", totalRewardCalculationTime.get() / 1000.0 / hotKeys);
-            System.out.printf("训练记录: %.2f\n", totalTrainingRecordTime.get() / 1000.0 / hotKeys);
-            System.out.printf("状态更新: %.2f\n", totalStateUpdateTime.get() / 1000.0 / total);
+        // 添加组件时间占比分析
+        if (avgTotal > 0) {
+            System.out.println("\n各组件时间占比：");
+            System.out.printf("热键检查: %.1f%%\n", (avgHotKey / avgTotal) * 100);
+            System.out.printf("路由表操作: %.1f%%\n", (avgRouting / avgTotal) * 100);
+            System.out.printf("神经网络推理: %.1f%%\n", (avgNN / avgTotal) * 100);
+            System.out.printf("训练: %.1f%%\n", (avgTraining / avgTotal) * 100);
         }
-        
-        // 计算总时间分布（微秒）
-        long totalHotKeyTime = totalHotKeyDetectionTime.get();
-        long totalRoutingTime = totalRoutingTableLookupTime.get();
-        long totalStateVectorTime = totalStateVectorBuildTime.get();
-        long totalNeuralTime = totalNeuralNetworkInferenceTime.get();
-        long totalRewardTime = totalRewardCalculationTime.get();
-        long totalTrainingTime = totalTrainingRecordTime.get();
-        long totalStateUpdateTime = this.totalStateUpdateTime.get();
-        
-        long totalProcessingTime = totalHotKeyTime + totalRoutingTime + totalStateVectorTime + 
-                                 totalNeuralTime + totalRewardTime + totalTrainingTime + totalStateUpdateTime;
-        
-        if (totalProcessingTime > 0) {
-            System.out.println("\n--- 总执行时间 (微秒) ---");
-            System.out.printf("热键检测: %.2f\n", totalHotKeyTime / 1000.0);
-            System.out.printf("路由表查找: %.2f\n", totalRoutingTime / 1000.0);
-            System.out.printf("状态向量构建: %.2f\n", totalStateVectorTime / 1000.0);
-            System.out.printf("神经网络推理: %.2f\n", totalNeuralTime / 1000.0);
-            System.out.printf("奖励计算: %.2f\n", totalRewardTime / 1000.0);
-            System.out.printf("训练记录: %.2f\n", totalTrainingTime / 1000.0);
-            System.out.printf("状态更新: %.2f\n", totalStateUpdateTime / 1000.0);
-            System.out.printf("总处理时间: %.2f\n", totalProcessingTime / 1000.0);
-        }
-        
-        // 计算每条记录的平均总处理时间
-        double avgTotalTime = totalProcessingTime / 1000.0 / total;
-        System.out.printf("\n每条记录平均总处理时间: %.2f 微秒\n", avgTotalTime);
-        
-        System.out.println("================================\n");
     }
 } 
