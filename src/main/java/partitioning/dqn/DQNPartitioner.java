@@ -71,7 +71,7 @@ public class DQNPartitioner extends Partitioner {
     private double epsilon;
     
     // 定时更新目标网络的参数
-    private static final int TARGET_UPDATE_FREQUENCY = 10000; // 每处理1000个样本更新一次目标网络（从100改为1000）
+    private static final int TARGET_UPDATE_FREQUENCY = 256; // 每处理1000个样本更新一次目标网络（从100改为1000）
     private int sampleCounter = 0;
     
     // 线程相关
@@ -101,8 +101,8 @@ public class DQNPartitioner extends Partitioner {
     private static final int MAX_ROUTING_TABLE_SIZE = 100;
     
     // 归一化组件
-    //private final transient NormalizeObservation obsNormalizer;
-    //private final transient ScaleReward rewardScaler;
+    private final transient NormalizeObservation obsNormalizer;
+    private final transient ScaleReward rewardScaler;
     private static final double EPSILON = 1e-8; // 用于归一化的小常数
     
     // 批量训练相关
@@ -149,11 +149,11 @@ public class DQNPartitioner extends Partitioner {
         initializeExecutors();
         
         // 初始化归一化组件
-        //this.obsNormalizer = new NormalizeObservation(stateSize, EPSILON);
-        //this.rewardScaler = new ScaleReward(GAMMA, EPSILON);
+        this.obsNormalizer = new NormalizeObservation(stateSize, EPSILON);
+        this.rewardScaler = new ScaleReward(GAMMA, EPSILON);
         
         // 验证归一化组件已正确初始化
-       // if (this.obsNormalizer == null || this.rewardScaler == null) {throw new IllegalStateException("归一化组件初始化失败");}
+       if (this.obsNormalizer == null || this.rewardScaler == null) {throw new IllegalStateException("归一化组件初始化失败");}
     }
     
     /**
@@ -373,11 +373,11 @@ public class DQNPartitioner extends Partitioner {
         }
         
         // 3. 对状态向量进行归一化（如果归一化器可用）
-       //if (obsNormalizer != null) {
-            //return obsNormalizer.process(stateVector);
-            //} else {// 归一化器未初始化时，直接返回原始状态向量
+       if (obsNormalizer != null) {
+            return obsNormalizer.process(stateVector);
+            } else {// 归一化器未初始化时，直接返回原始状态向量
             return stateVector;
-            //}
+            }
 }
 
     private double calculateReward(Record record, int action) {
@@ -393,13 +393,12 @@ public class DQNPartitioner extends Partitioner {
         double fragmentation = state.keyfragmentation(record.getKeyId()).cardinality() / (double)parallelism;
         reward -= fragmentation * 0.5;
 
-
         // 3. 对奖励进行缩放归一化（如果缩放器可用）
-       //if (rewardScaler != null) {
-            //return rewardScaler.process(reward, false); // 在流处理中通常不会终止
-        //} else { // 奖励缩放器未初始化时，直接返回原始reward
+        if (rewardScaler != null) {
+            return rewardScaler.process(reward, false); // 在流处理中通常不会终止
+        } else { // 奖励缩放器未初始化时，直接返回原始reward
             return reward;
-//}
+        }
         
     }
 

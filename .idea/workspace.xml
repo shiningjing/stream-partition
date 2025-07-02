@@ -4,16 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="training">
+    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="integral DQN without Normalization">
       <change afterPath="$PROJECT_DIR$/input/raw_tweets_text.csv" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/target/flink-wordcount-dqn-1.0-SNAPSHOT.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/correlation_clustering/CorrelationClustering.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/correlation_clustering/CorrelationClustering.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/DQNPartitioner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/DQNPartitioner.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/wordCount/WordCount.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/wordCount/WordCount.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/NormalizeObservation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/NormalizeObservation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/SampleMeanStd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/SampleMeanStd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/ScaleReward.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/ScaleReward.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/NormalizeObservation.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/NormalizeObservation.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/SampleMeanStd.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/SampleMeanStd.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/ScaleReward.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/ScaleReward.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/original-flink-wordcount-dqn-1.0-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/original-flink-wordcount-dqn-1.0-SNAPSHOT.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -203,7 +207,15 @@
       <option name="project" value="LOCAL" />
       <updated>1751285192036</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="integral DQN without Normalization">
+      <option name="closed" value="true" />
+      <created>1751452033083</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1751452033083</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -238,6 +250,7 @@
     <MESSAGE value="DQN no replay" />
     <MESSAGE value="epsilon-greedy" />
     <MESSAGE value="training" />
-    <option name="LAST_COMMIT_MESSAGE" value="training" />
+    <MESSAGE value="integral DQN without Normalization" />
+    <option name="LAST_COMMIT_MESSAGE" value="integral DQN without Normalization" />
   </component>
 </project>

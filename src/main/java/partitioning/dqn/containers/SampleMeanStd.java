@@ -1,77 +1,74 @@
 package partitioning.dqn.containers;
 
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import java.io.Serializable;
 
 /**
  * 跟踪并计算样本的均值和方差
- * 对应Python的SampleMeanStd类
+ * 使用普通数组实现，不依赖INDArray
  */
 public class SampleMeanStd implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    private INDArray mean; // 均值
-    private INDArray var;  // 方差
-    private INDArray p;    // 中间变量，累积差的平方和
+    private double[] mean; // 均值
+    private double[] var;  // 方差
+    private double[] m2;   // 平方差的累积和（用于Welford算法）
     private long count;    // 样本数量
+    private int size;      // 数组大小
     
     /**
-     * 构造函数，初始化为指定形状的数组
+     * 构造函数，初始化为指定大小的数组
      */
-    public SampleMeanStd(int... shape) {
-        mean = Nd4j.zeros(shape);
-        var = Nd4j.ones(shape);
-        p = Nd4j.zeros(shape);
-        count = 0;
+    public SampleMeanStd(int size) {
+        this.size = size;
+        this.mean = new double[size];
+        this.var = new double[size];
+        this.m2 = new double[size];
+        this.count = 0;
+        
+        // 初始化方差为1
+        for (int i = 0; i < size; i++) {
+            var[i] = 1.0;
+        }
     }
     
     /**
-     * 使用新样本更新统计量
-     */
-    public void update(INDArray x) {
-        if (count == 0) {
-            mean = x.dup();
-            p = Nd4j.zeros(x.shape());
-        }
-        
-        // 更新统计量
-        count++;
-        INDArray delta = x.sub(mean);
-        INDArray newMean = mean.add(delta.div(count));
-        p = p.add(delta.mul(x.sub(newMean)));
-        
-        // 更新方差
-        if (count < 2) {
-            var = Nd4j.ones(mean.shape());
-        } else {
-            var = p.div(count - 1);
-        }
-        
-        // 更新均值
-        mean = newMean;
-    }
-    
-    /**
-     * 使用新样本更新统计量（数组版本）
+     * 使用新样本更新统计量（使用Welford在线算法）
      */
     public void update(double[] x) {
-        update(Nd4j.create(x));
+        if (x.length != size) {
+            throw new IllegalArgumentException("输入数组大小不匹配: " + x.length + " vs " + size);
+        }
+        
+        count++;
+        
+        for (int i = 0; i < size; i++) {
+            // Welford在线算法更新均值和方差
+            double delta = x[i] - mean[i];
+            mean[i] += delta / count;
+            double delta2 = x[i] - mean[i];
+            m2[i] += delta * delta2;
+            
+            // 计算方差
+            if (count > 1) {
+                var[i] = m2[i] / (count - 1);
+            } else {
+                var[i] = 1.0; // 单个样本时方差设为1
+            }
+        }
     }
     
     /**
-     * 获取均值
+     * 获取均值的副本
      */
-    public INDArray getMean() {
-        return mean;
+    public double[] getMean() {
+        return mean.clone();
     }
     
     /**
-     * 获取方差
+     * 获取方差的副本
      */
-    public INDArray getVar() {
-        return var;
+    public double[] getVar() {
+        return var.clone();
     }
     
     /**
@@ -82,18 +79,48 @@ public class SampleMeanStd implements Serializable {
     }
     
     /**
-     * 将输入归一化：(x - mean) / sqrt(var + epsilon)
+     * 获取数组大小
      */
-    public INDArray normalize(INDArray x, double epsilon) {
-        return x.sub(mean).div(Transforms.sqrt(var.add(epsilon)));
+    public int getSize() {
+        return size;
     }
     
     /**
      * 将输入归一化：(x - mean) / sqrt(var + epsilon)
      */
     public double[] normalize(double[] x, double epsilon) {
-        INDArray xArr = Nd4j.create(x);
-        INDArray normalized = normalize(xArr, epsilon);
-        return normalized.toDoubleVector();
+        if (x.length != size) {
+            throw new IllegalArgumentException("输入数组大小不匹配: " + x.length + " vs " + size);
+        }
+        
+        double[] normalized = new double[size];
+        for (int i = 0; i < size; i++) {
+            double std = Math.sqrt(var[i] + epsilon);
+            normalized[i] = (x[i] - mean[i]) / std;
+        }
+        return normalized;
+    }
+    
+    /**
+     * 重置所有统计量
+     */
+    public void reset() {
+        count = 0;
+        for (int i = 0; i < size; i++) {
+            mean[i] = 0.0;
+            var[i] = 1.0;
+            m2[i] = 0.0;
+        }
+    }
+    
+    /**
+     * 获取标准差
+     */
+    public double[] getStd(double epsilon) {
+        double[] std = new double[size];
+        for (int i = 0; i < size; i++) {
+            std[i] = Math.sqrt(var[i] + epsilon);
+        }
+        return std;
     }
 } 

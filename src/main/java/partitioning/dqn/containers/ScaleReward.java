@@ -1,13 +1,10 @@
 package partitioning.dqn.containers;
 
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import java.io.Serializable;
 
 /**
  * 奖励缩放包装器
- * 对应Python的ScaleReward类
+ * 使用普通数值计算，不依赖INDArray
  */
 public class ScaleReward implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -23,7 +20,7 @@ public class ScaleReward implements Serializable {
      * @param epsilon 用于避免除零错误的小常数
      */
     public ScaleReward(double gamma, double epsilon) {
-        this.rewardStats = new SampleMeanStd(1);
+        this.rewardStats = new SampleMeanStd(1); // 奖励是单一数值
         this.rewardTrace = 0.0;
         this.gamma = gamma;
         this.epsilon = epsilon;
@@ -44,8 +41,8 @@ public class ScaleReward implements Serializable {
         rewardStats.update(rewardArr);
         
         // 缩放奖励
-        INDArray rewardVar = rewardStats.getVar();
-        double stdReward = Math.sqrt(rewardVar.getDouble(0) + epsilon);
+        double[] rewardVar = rewardStats.getVar();
+        double stdReward = Math.sqrt(rewardVar[0] + epsilon);
         return reward / stdReward;
     }
     
@@ -68,5 +65,28 @@ public class ScaleReward implements Serializable {
      */
     public SampleMeanStd getRewardStats() {
         return rewardStats;
+    }
+    
+    /**
+     * 获取当前奖励的标准差
+     */
+    public double getRewardStd() {
+        double[] var = rewardStats.getVar();
+        return Math.sqrt(var[0] + epsilon);
+    }
+    
+    /**
+     * 获取当前奖励的均值
+     */
+    public double getRewardMean() {
+        double[] mean = rewardStats.getMean();
+        return mean[0];
+    }
+    
+    /**
+     * 获取处理的奖励样本数量
+     */
+    public long getRewardCount() {
+        return rewardStats.getCount();
     }
 } 

@@ -191,7 +191,7 @@ public class CorrelationClustering {
             PerformanceMonitor.getInstance().start();
             
             Configuration config = new Configuration();
-            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 10); // 每个 TaskManager 提供 6 个 Slot
+            config.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, 81); // 每个 TaskManager 提供 6 个 Slot
 
             // 创建环境
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
