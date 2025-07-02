@@ -57,7 +57,11 @@ import java.util.concurrent.CompletableFuture;
 public class DQNPartitioner extends Partitioner {
     private final State state;
     private final transient MultiLayerNetwork mainNetwork;     // 主网络用于训练
-    private final transient MultiLayerNetwork targetNetwork;   // 目标网络用于预测
+    private final transient MultiLayerNetwork targetNetwork1;  // 目标网络1
+    private final transient MultiLayerNetwork targetNetwork2;  // 目标网络2
+    private volatile int activeTargetNetwork = 1; // 当前使用的目标网络 (1 或 2)
+    private final AtomicBoolean isUpdatingTargetNetwork = new AtomicBoolean(false); // 是否正在更新目标网络
+    
     private final int stateSize;
     private final int actionSize;
     private static final double GAMMA = 0.99;
@@ -67,7 +71,7 @@ public class DQNPartitioner extends Partitioner {
     private double epsilon;
     
     // 定时更新目标网络的参数
-    private static final int TARGET_UPDATE_FREQUENCY = 100; // 每处理100个样本更新一次目标网络
+    private static final int TARGET_UPDATE_FREQUENCY = 10000; // 每处理1000个样本更新一次目标网络（从100改为1000）
     private int sampleCounter = 0;
     
     // 线程相关
@@ -94,7 +98,7 @@ public class DQNPartitioner extends Partitioner {
     private final AtomicLong routingTableMisses = new AtomicLong(0);
     
     // 添加LRU缓存大小限制
-    private static final int MAX_ROUTING_TABLE_SIZE = 1000;
+    private static final int MAX_ROUTING_TABLE_SIZE = 100;
     
     // 归一化组件
     //private final transient NormalizeObservation obsNormalizer;
@@ -102,15 +106,7 @@ public class DQNPartitioner extends Partitioner {
     private static final double EPSILON = 1e-8; // 用于归一化的小常数
     
     // 批量训练相关
-    private static final int BATCH_SIZE = 32; // 批量训练的大小，也用于记录触发训练
-    
-    // 添加时间统计变量
-    private final AtomicLong hotKeyCheckTime = new AtomicLong(0);
-    private final AtomicLong routingTableTime = new AtomicLong(0);
-    private final AtomicLong neuralNetworkTime = new AtomicLong(0);
-    private final AtomicLong trainingTime = new AtomicLong(0);
-    private final AtomicLong totalProcessingTime = new AtomicLong(0);
-    private final AtomicLong recordCount = new AtomicLong(0);
+    private static final int BATCH_SIZE = 128; // 批量训练的大小，也用于记录触发训练
     
     // 训练记录类
     private static class TrainingRecord implements java.io.Serializable {
@@ -135,15 +131,19 @@ public class DQNPartitioner extends Partitioner {
         // 构建简化DQN网络 - 只有一个隐藏层
         MultiLayerConfiguration conf = createNetworkConfig();
         
-        // 初始化主网络和目标网络
+        // 初始化主网络和两个目标网络
         this.mainNetwork = new MultiLayerNetwork(conf);
         this.mainNetwork.init();
         
-        this.targetNetwork = new MultiLayerNetwork(conf);
-        this.targetNetwork.init();
+        this.targetNetwork1 = new MultiLayerNetwork(conf);
+        this.targetNetwork1.init();
         
-        // 复制主网络权重到目标网络
-        copyNetworkWeights();
+        this.targetNetwork2 = new MultiLayerNetwork(conf);
+        this.targetNetwork2.init();
+        
+        // 复制主网络权重到两个目标网络
+        this.targetNetwork1.setParameters(mainNetwork.params());
+        this.targetNetwork2.setParameters(mainNetwork.params());
         
         // 初始化线程池
         initializeExecutors();
@@ -172,7 +172,7 @@ public class DQNPartitioner extends Partitioner {
      */
     private MultiLayerConfiguration createNetworkConfig() {
         // 计算中间层神经元数量：输入层 + 输出层
-        int hiddenLayerSize = (stateSize + actionSize)*2;
+        int hiddenLayerSize = (stateSize + actionSize);
 
         return new NeuralNetConfiguration.Builder()
             .seed(123)
@@ -184,12 +184,7 @@ public class DQNPartitioner extends Partitioner {
                 .nOut(hiddenLayerSize)
                 .activation(Activation.RELU)
                 .build())
-            .layer(1, new DenseLayer.Builder()
-                .nIn(hiddenLayerSize)
-                .nOut(hiddenLayerSize)
-                .activation(Activation.RELU)
-                .build())
-            .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+            .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                 .nIn(hiddenLayerSize)
                 .nOut(actionSize)
                 .activation(Activation.IDENTITY)
@@ -198,21 +193,53 @@ public class DQNPartitioner extends Partitioner {
     }
 
     /**
-     * 从主网络复制权重到目标网络
+     * 获取当前活跃的目标网络
      */
-    private void copyNetworkWeights() {
-      
-        try {
-            networkLock.writeLock().lock();
-            // 获取主网络参数
-            targetNetwork.setParameters(mainNetwork.params().dup());
-            
-            // 目标网络更新后，重置路由表
-            routingTable.clear();
-            routingTableValid.set(true);
-        } finally {
-            networkLock.writeLock().unlock();
+    private MultiLayerNetwork getActiveTargetNetwork() {
+        return activeTargetNetwork == 1 ? targetNetwork1 : targetNetwork2;
+    }
+    
+    /**
+     * 获取备用的目标网络（用于更新）
+     */
+    private MultiLayerNetwork getInactiveTargetNetwork() {
+        return activeTargetNetwork == 1 ? targetNetwork2 : targetNetwork1;
+    }
+    
+    /**
+     * 异步更新备用目标网络并切换
+     */
+    private void updateTargetNetworkAsync() {
+        if (isUpdatingTargetNetwork.compareAndSet(false, true)) {
+            if (trainingExecutor != null) {
+                trainingExecutor.submit(() -> {
+                    try {
+                        // 获取备用网络并更新其参数
+                        MultiLayerNetwork inactiveNetwork = getInactiveTargetNetwork();
+                        inactiveNetwork.setParameters(mainNetwork.params());
+                        
+                        // 切换活跃网络
+                        activeTargetNetwork = activeTargetNetwork == 1 ? 2 : 1;
+                        
+                       
+                            
+                    } catch (Exception e) {
+                        System.err.println("异步目标网络更新失败: " + e.getMessage());
+                        e.printStackTrace();
+                    } finally {
+                        isUpdatingTargetNetwork.set(false);
+                    }
+                });
+            }
         }
+    }
+    
+    /**
+     * 从主网络复制权重到目标网络 - 已弃用，使用异步双缓冲方案
+     */
+    @Deprecated
+    private void copyNetworkWeights() {
+        // 保留此方法以兼容序列化，但不再使用
     }
 
     /**
@@ -252,8 +279,6 @@ public class DQNPartitioner extends Partitioner {
     
     @Override
     public void flatMap(Record record, Collector<Tuple2<Integer, Record>> out) throws Exception {
-        long startTime = System.nanoTime();
-        
         // 确保ExecutorService已初始化
         if (!executorsInitialized) {
             initializeExecutors();
@@ -262,11 +287,9 @@ public class DQNPartitioner extends Partitioner {
         int keyId = record.getKeyId();
         int worker;
         
-        // 1. 热键检查时间统计
-        long hotKeyCheckStart = System.nanoTime();
+        // 1. 热键检查
         boolean isHot = state.isHot(record, null) == 1;
         state.updateExpired(record, isHot);
-        hotKeyCheckTime.addAndGet(System.nanoTime() - hotKeyCheckStart);
         
         double[] stateVector = null;
         
@@ -274,13 +297,10 @@ public class DQNPartitioner extends Partitioner {
             worker = Math.abs(keyId % parallelism);
             state.update(record, worker);
             out.collect(new Tuple2<>(worker, record));
-            totalProcessingTime.addAndGet(System.nanoTime() - startTime);
-            recordCount.incrementAndGet();
             return;
         }
         
-        // 2. 路由表查询时间统计
-        long routingStart = System.nanoTime();
+        // 2. 路由表查询
         if (routingTableValid.get() && routingTable.containsKey(keyId)) {
             worker = routingTable.get(keyId);
             routingTableHits.incrementAndGet();
@@ -288,9 +308,8 @@ public class DQNPartitioner extends Partitioner {
             routingTableMisses.incrementAndGet();
             stateVector = buildStateVector(record);
             
-            // 3. 神经网络推理时间统计
-            long nnStart = System.nanoTime();
-            if (targetNetwork == null) {
+            // 3. 神经网络推理
+            if (getActiveTargetNetwork() == null) {
                 worker = Math.abs(keyId % parallelism);
             } else {
                 try {
@@ -299,36 +318,26 @@ public class DQNPartitioner extends Partitioner {
                         worker = (int) (Math.random() * parallelism);
                     } else {
                         INDArray stateInput = Nd4j.create(stateVector).reshape(1, stateSize);
-                        INDArray qValues = targetNetwork.output(stateInput);
+                        INDArray qValues = getActiveTargetNetwork().output(stateInput);
                         worker = Nd4j.argMax(qValues, 1).getInt(0);
                     }
                 } finally {
                     networkLock.readLock().unlock();
                 }
             }
-            neuralNetworkTime.addAndGet(System.nanoTime() - nnStart);
             
             if (routingTableValid.get()) {
                 updateRoutingTable(keyId, worker);
             }
         }
-        routingTableTime.addAndGet(System.nanoTime() - routingStart);
         
-        // 4. 训练时间统计
-        long trainingStart = System.nanoTime();
+        // 4. 训练
         if (stateVector == null) {
             stateVector = buildStateVector(record);
         }
         
         double reward = calculateReward(record, worker);
         trainMainNetwork(stateVector, worker, reward);
-        
-        long currentRecordCount = recordCounter.incrementAndGet();
-        
-        if (currentRecordCount >= BATCH_SIZE) {
-            recordCounter.set(0);
-        }
-        trainingTime.addAndGet(System.nanoTime() - trainingStart);
         
         state.update(record, worker);
         out.collect(new Tuple2<>(worker, record));
@@ -337,16 +346,12 @@ public class DQNPartitioner extends Partitioner {
         
         sampleCounter++;
         if (sampleCounter >= TARGET_UPDATE_FREQUENCY) {
-            copyNetworkWeights();
+            updateTargetNetworkAsync();
+            
+             // 清理路由表
+            routingTable.clear();
+            routingTableValid.set(true);
             sampleCounter = 0;
-        }
-        
-        totalProcessingTime.addAndGet(System.nanoTime() - startTime);
-        recordCount.incrementAndGet();
-        
-        // 每处理1000条记录输出一次统计信息
-        if (recordCount.get() % 1000 == 0) {
-            printTimingStats();
         }
     }
     
@@ -503,15 +508,19 @@ public class DQNPartitioner extends Partitioner {
         // 重新初始化网络
         MultiLayerConfiguration conf = createNetworkConfig();
         
-        // 初始化主网络和目标网络
+        // 初始化主网络和两个目标网络
         MultiLayerNetwork tempMainNetwork = new MultiLayerNetwork(conf);
         tempMainNetwork.init();
         
-        MultiLayerNetwork tempTargetNetwork = new MultiLayerNetwork(conf);
-        tempTargetNetwork.init();
+        MultiLayerNetwork tempTargetNetwork1 = new MultiLayerNetwork(conf);
+        tempTargetNetwork1.init();
         
-        // 复制主网络权重到目标网络
-        tempTargetNetwork.setParameters(tempMainNetwork.params().dup());
+        MultiLayerNetwork tempTargetNetwork2 = new MultiLayerNetwork(conf);
+        tempTargetNetwork2.init();
+        
+        // 复制主网络权重到两个目标网络
+        tempTargetNetwork1.setParameters(tempMainNetwork.params().dup());
+        tempTargetNetwork2.setParameters(tempMainNetwork.params().dup());
         
         // 使用反射设置final字段
         try {
@@ -519,9 +528,13 @@ public class DQNPartitioner extends Partitioner {
             mainNetworkField.setAccessible(true);
             mainNetworkField.set(this, tempMainNetwork);
             
-            java.lang.reflect.Field targetNetworkField = this.getClass().getDeclaredField("targetNetwork");
-            targetNetworkField.setAccessible(true);
-            targetNetworkField.set(this, tempTargetNetwork);
+            java.lang.reflect.Field targetNetwork1Field = this.getClass().getDeclaredField("targetNetwork1");
+            targetNetwork1Field.setAccessible(true);
+            targetNetwork1Field.set(this, tempTargetNetwork1);
+            
+            java.lang.reflect.Field targetNetwork2Field = this.getClass().getDeclaredField("targetNetwork2");
+            targetNetwork2Field.setAccessible(true);
+            targetNetwork2Field.set(this, tempTargetNetwork2);
             
             // 重新初始化归一化组件
             /*java.lang.reflect.Field obsNormalizerField = this.getClass().getDeclaredField("obsNormalizer");
@@ -559,42 +572,5 @@ public class DQNPartitioner extends Partitioner {
         }
         
         routingTable.put(keyId, worker);
-    }
-    
-    /**
-     * 打印时间统计信息
-     */
-    private void printTimingStats() {
-        long totalRecords = recordCount.get();
-        if (totalRecords == 0) return;
-        
-        // 将纳秒转换为微秒 (1 微秒 = 1000 纳秒)
-        double avgTotal = totalProcessingTime.get() / (totalRecords * 1_000.0);
-        double avgHotKey = hotKeyCheckTime.get() / (totalRecords * 1_000.0);
-        double avgRouting = routingTableTime.get() / (totalRecords * 1_000.0);
-        double avgNN = neuralNetworkTime.get() / (totalRecords * 1_000.0);
-        double avgTraining = trainingTime.get() / (totalRecords * 1_000.0);
-        
-        System.out.printf("\n时间统计信息（每条记录平均时间，单位：微秒）：\n");
-        System.out.printf("总处理时间: %.3f\n", avgTotal);
-        System.out.printf("热键检查时间: %.3f\n", avgHotKey);
-        System.out.printf("路由表操作时间: %.3f\n", avgRouting);
-        System.out.printf("神经网络推理时间: %.3f\n", avgNN);
-        System.out.printf("训练时间: %.3f\n", avgTraining);
-        System.out.printf("已处理记录数: %d\n", totalRecords);
-        
-        double hitRate = routingTableHits.get() + routingTableMisses.get() > 0 
-            ? (double) routingTableHits.get() / (routingTableHits.get() + routingTableMisses.get()) * 100 
-            : 0.0;
-        System.out.printf("路由表命中率: %.2f%%\n", hitRate);
-        
-        // 添加组件时间占比分析
-        if (avgTotal > 0) {
-            System.out.println("\n各组件时间占比：");
-            System.out.printf("热键检查: %.1f%%\n", (avgHotKey / avgTotal) * 100);
-            System.out.printf("路由表操作: %.1f%%\n", (avgRouting / avgTotal) * 100);
-            System.out.printf("神经网络推理: %.1f%%\n", (avgNN / avgTotal) * 100);
-            System.out.printf("训练: %.1f%%\n", (avgTraining / avgTotal) * 100);
-        }
     }
 } 
