@@ -1,4 +1,5 @@
 record\RecordStr.class
+PrecisionBenchmark$BenchmarkResult.class
 correlation_clustering\CorrelationClustering$MonitoredProcessFunction.class
 partitioning\dqn\containers\SampleMeanStd.class
 sources\CircularFeed2files.class
@@ -63,7 +64,9 @@ partitioning\dqn\containers\NormalizeObservation.class
 partitioning\dalton\containers\syncMessagePartitioners.class
 partitioning\dalton\QTableReducer.class
 correlation_clustering\clustering\Vote.class
+PrecisionBenchmark.class
 partitioning\dalton\DaltonCooperative$Action.class
 wordCount\containers\WordCountState.class
 partitioning\dalton\containers\HotStatistics.class
+PrecisionBenchmark$PrecisionType.class
 wordCount\WordCountMultiAgent$2.class

@@ -31,6 +31,7 @@ G:\experience\DALTON-dqn\stream-partition\src\main\java\correlation_clustering\I
 G:\experience\DALTON-dqn\stream-partition\src\main\java\partitioning\CM.java
 G:\experience\DALTON-dqn\stream-partition\src\main\java\correlation_clustering\containers\PartialClusteringOutput.java
 G:\experience\DALTON-dqn\stream-partition\src\main\java\partitioning\dalton\containers\HotStatistics.java
+G:\experience\DALTON-dqn\stream-partition\src\main\java\PrecisionBenchmark.java
 G:\experience\DALTON-dqn\stream-partition\src\main\java\partitioning\cAM.java
 G:\experience\DALTON-dqn\stream-partition\src\main\java\partitioning\containers\PartialLoad.java
 G:\experience\DALTON-dqn\stream-partition\src\main\java\wordCount\ReduceWordCount.java
