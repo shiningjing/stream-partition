@@ -4,14 +4,78 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="integral DQN">
-      <change afterPath="$PROJECT_DIR$/input/raw_tweets_text.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/flink-wordcount-dqn-1.0-SNAPSHOT.jar" afterDir="false" />
+    <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="Duel-targetnetwork and no readlock">
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dalton/containers/HotStatistics.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dalton/containers/HotStatistics.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/DQNPartitioner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/DQNPartitioner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CORR_CLUSTERING.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CORR_CLUSTERING.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$ForwardKeys.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$ForwardKeys.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$MonitoredProcessFunction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$MonitoredProcessFunction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$PerformanceMonitor.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering$PerformanceMonitor.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/IncrementalMerge$QueueElem.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/IncrementalMerge$QueueElem.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/IncrementalMerge.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/IncrementalMerge.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/PartialWindowClustering.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/PartialWindowClustering.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/SimilarityGraph$RecordSim.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/SimilarityGraph$RecordSim.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/SimilarityGraph.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/SimilarityGraph.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/clustering/Best.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/clustering/Best.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/clustering/Clustering.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/clustering/Clustering.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/clustering/Vote.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/clustering/Vote.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/containers/Block.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/containers/Block.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/containers/Cluster.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/containers/Cluster.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/containers/PartialClusteringOutput.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/containers/PartialClusteringOutput.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/stringsimilarity/Similarity.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/stringsimilarity/Similarity.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/helperfunctions/PartitionerAssigner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/helperfunctions/PartitionerAssigner.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/CM.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/CM.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/CardinalityPartitioner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/CardinalityPartitioner.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/DAGreedy.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/DAGreedy.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/Hashing.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/Hashing.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/Partitioner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/Partitioner.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/Shuffling.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/Shuffling.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/TwoChoices.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/TwoChoices.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/cAM.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/cAM.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/containers/CardinalityWorker.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/containers/CardinalityWorker.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/containers/PartialAssignment.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/containers/PartialAssignment.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/containers/PartialLoad.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/containers/PartialLoad.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/containers/PartialLoadCard.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/containers/PartialLoadCard.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/containers/Worker.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/containers/Worker.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/ContextualBandits.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/ContextualBandits.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/Dalton.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/Dalton.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/DaltonCooperative$Action.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/DaltonCooperative$Action.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/DaltonCooperative$Frequency.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/DaltonCooperative$Frequency.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/DaltonCooperative.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/DaltonCooperative.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/QTableReducer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/QTableReducer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/CountMinSketch.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/CountMinSketch.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/HotStatistics.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/HotStatistics.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/Qtable.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/Qtable.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/QtableEntry.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/QtableEntry.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/syncMessage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/syncMessage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/syncMessagePartitioners.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/containers/syncMessagePartitioners.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dalton/state/State.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dalton/state/State.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/NormalizeObservation.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/NormalizeObservation.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/SampleMeanStd.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/SampleMeanStd.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/ScaleReward.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/ScaleReward.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/record/Record.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/record/Record.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/record/RecordStr.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/record/RecordStr.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/sources/CircularFeed.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/sources/CircularFeed.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/sources/CircularFeed2files.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/sources/CircularFeed2files.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/MapWordCount.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/MapWordCount.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/ReduceWordCount.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/ReduceWordCount.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$DebugProcessFunction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$DebugProcessFunction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$ForwardKeys.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$ForwardKeys.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$MonitoredProcessFunction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$MonitoredProcessFunction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$PerformanceMonitor.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$PerformanceMonitor.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount$SplitPerKeyResult.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount$SplitPerKeyResult.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCount.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCount.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/WordCountMultiAgent.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/wordCount/containers/WordCountState.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/wordCount/containers/WordCountState.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/original-flink-wordcount-dqn-1.0-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/original-flink-wordcount-dqn-1.0-SNAPSHOT.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -223,7 +287,15 @@
       <option name="project" value="LOCAL" />
       <updated>1751454281109</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Duel-targetnetwork and no readlock">
+      <option name="closed" value="true" />
+      <created>1751621220237</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1751621220237</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -260,6 +332,7 @@
     <MESSAGE value="training" />
     <MESSAGE value="integral DQN without Normalization" />
     <MESSAGE value="integral DQN" />
-    <option name="LAST_COMMIT_MESSAGE" value="integral DQN" />
+    <MESSAGE value="Duel-targetnetwork and no readlock" />
+    <option name="LAST_COMMIT_MESSAGE" value="Duel-targetnetwork and no readlock" />
   </component>
 </project>
