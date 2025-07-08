@@ -55,7 +55,9 @@ correlation_clustering\CorrelationClustering$ForwardKeys.class
 partitioning\dalton\DaltonCooperative.class
 correlation_clustering\containers\PartialClusteringOutput.class
 correlation_clustering\PartialWindowClustering.class
+test\PrecisionBenchmark.class
 wordCount\WordCount.class
+test\PrecisionBenchmark$BenchmarkResult.class
 partitioning\dalton\DaltonCooperative$Frequency.class
 partitioning\dalton\containers\Qtable.class
 partitioning\dalton\ContextualBandits.class
@@ -67,3 +69,4 @@ partitioning\dalton\DaltonCooperative$Action.class
 wordCount\containers\WordCountState.class
 partitioning\dalton\containers\HotStatistics.class
 wordCount\WordCountMultiAgent$2.class
+test\PrecisionBenchmark$PrecisionType.class

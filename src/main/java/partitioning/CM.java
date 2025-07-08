@@ -21,16 +21,52 @@ package partitioning;
 import record.Record;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.util.Collector;
+import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
+import partitioning.dalton.state.State;
+
+import java.util.*;
 
 /**
- * Implementation of CM algorithm
+ * Implementation of CM algorithm with State Monitoring
  *
  * Nikos R. Katsipoulakis et al.
  * A holistic view of stream partitioning costs. VLB'17
+ * 
+ * Enhanced with State class for performance monitoring similar to Dalton implementation
  */
-public class CM extends CardinalityPartitioner{
-    public CM(int size, int slide, int p){
-        super(size, slide, p);
+public class CM extends Partitioner implements CheckpointedFunction {
+    private final double HASH_C = (Math.sqrt(5) - 1) / 2;
+    
+    State state;
+    private ListState<State> state_chk;
+    
+    // Track cardinality for each worker (number of distinct keys)
+    private List<Set<Integer>> workerKeys;
+    private ListState<List<Set<Integer>>> workerKeys_chk;
+
+    public CM(int parallelism, int slide, int size, int numOfKeys){
+        super(parallelism);
+        state = new State(size, slide, parallelism, numOfKeys);
+        
+        // Initialize cardinality tracking
+        workerKeys = new ArrayList<>();
+        for(int i = 0; i < parallelism; i++){
+            workerKeys.add(new HashSet<>());
+        }
+    }
+
+    protected int hash1(int n) {
+        return n % parallelism;
+    }
+
+    // https://www.geeksforgeeks.org/what-are-hash-functions-and-how-to-choose-a-good-hash-function/
+    protected int hash2(int n) {
+        double a = (n + 1) * HASH_C;
+        return (int)Math.floor(parallelism * (a - (int) a));
     }
 
     @Override
@@ -39,10 +75,69 @@ public class CM extends CardinalityPartitioner{
         int worker1 = hash1(recordId);
         int worker2 = hash2(recordId);
 
-        expireSlide(record.getTs());
+        // Update state statistics - expire old state first
+        // 设置为true以确保键分配被正确跟踪，用于复制因子计算
+        state.updateExpired(record, true);
 
-        int chosenWorker = (workersStats.get(worker1).getCardinality() < workersStats.get(worker2).getCardinality()) ? worker1 : worker2;
-        updateState(chosenWorker, recordId);
+        // Choose worker with lower cardinality (number of distinct keys)
+        int cardinality1 = workerKeys.get(worker1).size();
+        int cardinality2 = workerKeys.get(worker2).size();
+        int chosenWorker = (cardinality1 < cardinality2) ? worker1 : worker2;
+        
+        // Update cardinality tracking
+        workerKeys.get(chosenWorker).add(recordId);
+        
+        // Update state with record assignment
+        state.update(record, chosenWorker);
+        
         out.collect(new Tuple2<>(chosenWorker, record));
+    }
+
+    @Override
+    public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
+        state_chk.clear();
+        state_chk.add(state);
+        
+        workerKeys_chk.clear();
+        workerKeys_chk.add(workerKeys);
+    }
+
+    @Override
+    public void initializeState(FunctionInitializationContext functionInitializationContext) throws Exception {
+        state_chk = functionInitializationContext.getOperatorStateStore()
+                .getListState(new ListStateDescriptor<>("cmStateChk", State.class));
+        
+        workerKeys_chk = functionInitializationContext.getOperatorStateStore()
+                .getListState(new ListStateDescriptor<>("cmWorkerKeysChk", (Class<List<Set<Integer>>>) (Class<?>) List.class));
+        
+        for (State s : state_chk.get()) {
+            state = s;
+        }
+        
+        for (List<Set<Integer>> wk : workerKeys_chk.get()) {
+            workerKeys = wk;
+        }
+        
+        // If no previous state exists, initialize cardinality tracking
+        if (workerKeys == null) {
+            workerKeys = new ArrayList<>();
+            for(int i = 0; i < parallelism; i++){
+                workerKeys.add(new HashSet<>());
+            }
+        }
+    }
+
+    // Method for debugging - get current state statistics
+    public State getState() {
+        return state;
+    }
+    
+    // Method for debugging - get cardinality for each worker
+    public List<Integer> getWorkerCardinalities() {
+        List<Integer> cardinalities = new ArrayList<>();
+        for (Set<Integer> keys : workerKeys) {
+            cardinalities.add(keys.size());
+        }
+        return cardinalities;
     }
 }

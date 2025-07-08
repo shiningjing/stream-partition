@@ -83,15 +83,15 @@ public class PartitionerAssigner {
         if (algorithm == PARTITIONING_ALG.SHUFFLING) {
             partitioner = new Shuffling(parallelism);
         } else if (algorithm == PARTITIONING_ALG.TWO_CHOICES) {
-            partitioner = new TwoChoices(size, slide, parallelism);
+            partitioner = new TwoChoices(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.HASHING) {
-            partitioner = new Hashing(parallelism);
+            partitioner = new Hashing(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.DALTON){
             partitioner = new Dalton(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.CM){
-            partitioner = new CM(size, slide, parallelism);
+            partitioner = new CM(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.cAM){
-            partitioner = new cAM(size, slide, parallelism);
+            partitioner = new cAM(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.DAGreedy){
             partitioner = new DAGreedy(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.DQN){

@@ -18,29 +18,66 @@ SOFTWARE.*/
 
 package partitioning;
 
-import record.*;
+import record.Record;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.util.Collector;
+import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
+import partitioning.dalton.state.State;
 
 /**
- * Hashing Partitioning
- * Assigns each block to one worker
- *
- * Receives the records
- * Partitions the records in a round-robin fashion
+ * Hashing Partitioning with State Monitoring
+ * Assigns each record to one worker based on key hash
+ * Monitors partition statistics using State class similar to Dalton implementation
  */
+public class Hashing extends Partitioner implements CheckpointedFunction {
+    
+    State state;
+    private ListState<State> state_chk;
 
-public class Hashing extends Partitioner {
-
-    public Hashing(int p){
-        super(p);
+    public Hashing(int numWorkers, int slide, int size, int numOfKeys){
+        super(numWorkers);
+        state = new State(size, slide, numWorkers, numOfKeys);
     }
 
     @Override
     public void flatMap(Record record, Collector<Tuple2<Integer, Record>> out) throws Exception {
+        // Calculate worker using hash function
         int blId = record.getKeyId();
         int worker = blId % parallelism;
 
+        // Update state statistics - expire old state first
+        // 设置为true以确保键分配被正确跟踪，用于复制因子计算
+        state.updateExpired(record, true); 
+        
+        // Update state with record assignment
+        state.update(record, worker);
+        
+        // Output the record-worker pair
         out.collect(new Tuple2<>(worker, record));
+    }
+
+    @Override
+    public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
+        state_chk.clear();
+        state_chk.add(state);
+    }
+
+    @Override
+    public void initializeState(FunctionInitializationContext functionInitializationContext) throws Exception {
+        state_chk = functionInitializationContext.getOperatorStateStore()
+                .getListState(new ListStateDescriptor<>("hashingStateChk", State.class));
+        
+        for (State s : state_chk.get()) {
+            state = s;
+        }
+    }
+
+    // Method for debugging - get current state statistics
+    public State getState() {
+        return state;
     }
 }

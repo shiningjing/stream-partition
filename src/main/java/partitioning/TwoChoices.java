@@ -20,38 +20,36 @@ package partitioning;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.util.Collector;
+import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 
 import java.lang.Math;
 import java.util.*;
 
 import record.*;
-import partitioning.containers.Worker;
+import partitioning.dalton.state.State;
 
 /**
- * 2 choices Partitioning
+ * 2 choices Partitioning with State Monitoring
  * <p>
  * Nasir et al.
  * The power of both choices: Practical load balancing for distributed stream processing engines (ICDE'15)
- *
+ * 
+ * Enhanced with State class for performance monitoring similar to Dalton implementation
  */
 
-public class TwoChoices extends Partitioner {
+public class TwoChoices extends Partitioner implements CheckpointedFunction {
     private final double HASH_C = (Math.sqrt(5) - 1) / 2;
-    private int nextUpdate;
-    private int slide;
+    
+    State state;
+    private ListState<State> state_chk;
 
-    protected List<Worker> workersStats;
-
-    public TwoChoices(int size, int slide, int p) {
-        super(p);
-
-        this.slide = slide;
-        nextUpdate = 0;
-	    workersStats = new ArrayList<>();
-        for(int i = 0; i < p; i++){
-            Worker w = new Worker(size, slide);
-            workersStats.add(w);
-        }
+    public TwoChoices(int parallelism, int slide, int size, int numOfKeys) {
+        super(parallelism);
+        state = new State(size, slide, parallelism, numOfKeys);
     }
 
     protected int hash1(int n) {
@@ -70,26 +68,40 @@ public class TwoChoices extends Partitioner {
         int worker1 = hash1(recordId);
         int worker2 = hash2(recordId);
 
-        expireSlide(record.getTs());
+        // Update state statistics - expire old state first
+        // 设置为true以确保键分配被正确跟踪，用于复制因子计算
+        state.updateExpired(record, true); 
 
-        int chosenWorker = (workersStats.get(worker1).getLoad() < workersStats.get(worker2).getLoad()) ? worker1 : worker2;
-        updateState(chosenWorker);
+        // Choose worker with lower load using State class
+        double load1 = state.getLoad(worker1);
+        double load2 = state.getLoad(worker2);
+        int chosenWorker = (load1 < load2) ? worker1 : worker2;
+        
+        // Update state with record assignment
+        state.update(record, chosenWorker);
+        
         out.collect(new Tuple2<>(chosenWorker, record));
     }
 
-    protected void expireSlide(long now){
-        if(now >= nextUpdate){
-            for (Worker w : workersStats){
-                w.expireOld(now);
-                w.addNewSlide(nextUpdate);
-            }
-            nextUpdate += slide;
+    @Override
+    public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
+        state_chk.clear();
+        state_chk.add(state);
+    }
+
+    @Override
+    public void initializeState(FunctionInitializationContext functionInitializationContext) throws Exception {
+        state_chk = functionInitializationContext.getOperatorStateStore()
+                .getListState(new ListStateDescriptor<>("twoChoicesStateChk", State.class));
+        
+        for (State s : state_chk.get()) {
+            state = s;
         }
     }
 
-    protected void updateState(int worker){
-        // increase load of chosen worker
-        workersStats.get(worker).updateState();
+    // Method for debugging - get current state statistics
+    public State getState() {
+        return state;
     }
 }
 

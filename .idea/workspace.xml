@@ -5,19 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="175cffe1-eecd-4543-9be7-898136b35fbf" name="更改" comment="integral DQN without Normalization">
-      <change afterPath="$PROJECT_DIR$/input/raw_tweets_text.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/flink-wordcount-dqn-1.0-SNAPSHOT.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/correlation_clustering/CorrelationClustering.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/correlation_clustering/CorrelationClustering.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/DQNPartitioner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/DQNPartitioner.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/NormalizeObservation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/NormalizeObservation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/SampleMeanStd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/SampleMeanStd.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/ScaleReward.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/dqn/containers/ScaleReward.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/correlation_clustering/CorrelationClustering.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/DQNPartitioner.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/NormalizeObservation.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/NormalizeObservation.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/SampleMeanStd.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/SampleMeanStd.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/ScaleReward.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/dqn/containers/ScaleReward.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/helperfunctions/PartitionerAssigner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/helperfunctions/PartitionerAssigner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/CM.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/CM.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/DAGreedy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/DAGreedy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/Hashing.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/Hashing.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/TwoChoices.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/TwoChoices.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/partitioning/cAM.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/partitioning/cAM.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/helperfunctions/PARTITIONING_ALG.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/helperfunctions/PARTITIONING_ALG.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/helperfunctions/PartitionerAssigner.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/helperfunctions/PartitionerAssigner.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/CM.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/CM.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/Hashing.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/Hashing.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/TwoChoices.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/TwoChoices.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/partitioning/cAM.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/partitioning/cAM.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/original-flink-wordcount-dqn-1.0-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/original-flink-wordcount-dqn-1.0-SNAPSHOT.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -27,6 +29,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -57,27 +60,30 @@
   &quot;associatedIndex&quot;: 0
 }</component>
   <component name="ProjectId" id="2tO2di4Aso2uoNfIe0H3HgZ5GbR" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "dqn",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "G:/experience/stream-partition",
-    "project.structure.last.edited": "SDK",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.5241379",
-    "settings.editor.selected.configurable": "reference.projectsettings.compiler.javacompiler",
-    "应用程序.CorrelationClustering.executor": "Run",
-    "应用程序.WordCount.executor": "Run"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dqn&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;G:/experience/stream-partition&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDK&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.5241379&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.javacompiler&quot;,
+    &quot;应用程序.CorrelationClustering.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.WordCount.executor&quot;: &quot;Run&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="应用程序.WordCount">
     <configuration name="CorrelationClustering" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="correlation_clustering.CorrelationClustering" />
@@ -96,7 +102,7 @@
     <configuration name="WordCount" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="wordCount.WordCount" />
       <module name="flink-wordcount" />
-      <option name="PROGRAM_PARAMETERS" value="input/big_dataset.txt - 64 - DQN 1000 60000 1000 8" />
+      <option name="PROGRAM_PARAMETERS" value="input/big_dataset.txt - 64 - cAM 1000 60000 1000 8" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="wordCount.*" />
