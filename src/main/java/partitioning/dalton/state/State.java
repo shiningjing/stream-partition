@@ -350,6 +350,25 @@ public class State implements Serializable{
         hotStatistics.setHotInterval(h);
     }
 
+    /**
+     * 获取指定键的频率统计
+     * 
+     * @param keyId 键ID
+     * @return 键的频率，如果键不存在则返回0
+     */
+    public int getKeyFrequency(int keyId) {
+        return hotStatistics.getKeyFrequency(keyId);
+    }
+
+    /**
+     * 获取窗口大小
+     * 
+     * @return 窗口大小（slide）
+     */
+    public int getSlide() {
+        return slide;
+    }
+
     // 添加关闭方法
     public void close() {
         try {

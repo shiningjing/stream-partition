@@ -1,0 +1,104 @@
+\documentclass[11pt]{article}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Redefine REQUIRE and ENSURE to show INPUT and OUTPUT
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\title{Deep Reinforcement Learning Partitioner Algorithm}
+\author{DALTON-DQN Stream Partition}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{algorithm}[H]
+\caption{Frequency-Constrained Deep Reinforcement Learning Partitioner}
+\label{alg:drl_partitioner}
+\begin{algorithmic}[1]
+
+\REQUIRE Record stream $R$, number of workers $N$, window size $W$
+\ENSURE Partition decision sequence $\{(worker\_id, record)\}$
+
+\STATE \textbf{Initialization:}
+\STATE Initialize main network $Q(s,a;\theta)$ and target network $Q^-(s,a;\theta^-)$
+\STATE Initialize state normalizer, reward scaler, routing cache $\mathcal{C}$, buffer $\mathcal{B}$
+\STATE Set hot key threshold $\tau = \max(10, 2N)$, exploration $\epsilon = 1.0$
+
+\STATE 
+\FOR{each record $r \in R$}
+    \STATE $key\_id \gets r.getKeyId()$
+    
+    \IF{$\neg isHot(r, \tau)$}
+        \STATE $worker \gets hash(key\_id) \bmod N$
+        \STATE \textbf{Output:} $(worker, r)$
+        \STATE \textbf{continue}
+    \ENDIF
+    
+    \STATE Get partition distribution: $P_{current} \gets keyfragmentation(key\_id)$
+    \STATE Calculate dynamic limit: $L_{dynamic} \gets getDynamicLimit(key\_id)$
+    
+    \IF{cache hit and valid}
+        \STATE $worker \gets \mathcal{C}[key\_id]$
+    \ELSE
+        \STATE Build state vector $s$ (load + fragmentation)
+        \STATE $shouldConstrain \gets |P_{current}| \geq 2$
+        \STATE $reachedLimit \gets |P_{current}| \geq L_{dynamic}$
+        
+        \IF{$rand() < \epsilon$}
+            \IF{$shouldConstrain$ \OR $reachedLimit$}
+                \STATE $worker \gets randomFrom(P_{current})$
+            \ELSE
+                \STATE $worker \gets randomFrom(\{0, 1, ..., N-1\})$
+            \ENDIF
+        \ELSE
+            \STATE $Q_{values} \gets Q^-(s; \theta^-)$
+            \IF{$reachedLimit$}
+                \STATE $worker \gets \arg\max_{a \in P_{current}} Q_{values}[a]$
+            \ELSE
+                \STATE $worker \gets \arg\max_{a} Q_{values}[a]$
+            \ENDIF
+        \ENDIF
+        \STATE Update cache: $\mathcal{C}[key\_id] \gets worker$
+    \ENDIF
+    
+    \STATE Calculate reward $r_{ew}$ (load balancing + fragmentation penalty)
+    \STATE Add sample: $\mathcal{B}.add((s, worker, r_{ew}))$
+    
+    \IF{$|\mathcal{B}| \geq BatchSize$}
+        \STATE Async train network $\theta$, clear $\mathcal{B}$
+    \ENDIF
+    
+    \STATE $\epsilon \gets \max(0.05, \epsilon \times 0.9999)$
+    
+    \IF{sample count $\geq 256$}
+        \STATE Update target network: $\theta^- \gets \theta$
+        \STATE Clear cache $\mathcal{C}$
+    \ENDIF
+    
+    \STATE \textbf{Output:} $(worker, r)$
+\ENDFOR
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Calculate Dynamic Partition Limit}
+\begin{algorithmic}[1]
+\REQUIRE Key ID $key\_id$, window size $W$, number of partitions $N$
+\ENSURE Dynamic partition limit $L$
+
+\STATE $frequency \gets getKeyFrequency(key\_id)$
+\STATE $normalized\_freq \gets \frac{frequency}{W} \times N$
+\STATE $L \gets 1 + \lfloor normalized\_freq \rfloor$
+\RETURN $\min(\max(L, 1), 16)$
+\end{algorithmic}
+\end{algorithm}
+
+\end{document} 

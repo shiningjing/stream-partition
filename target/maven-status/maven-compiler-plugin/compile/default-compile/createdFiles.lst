@@ -39,16 +39,15 @@ partitioning\containers\PartialAssignment.class
 sources\CircularFeed.class
 record\Record.class
 partitioning\dalton\containers\CountMinSketch.class
-partitioning\dqn\DQNPartitioner$TrainingRecord.class
 correlation_clustering\containers\Cluster.class
 partitioning\Partitioner.class
 partitioning\containers\Worker.class
 helperfunctions\PARTITIONING_ALG.class
 partitioning\DAGreedy.class
 wordCount\WordCount$1.class
+partitioning\dqn\DRLPartitioner$TrainingRecord.class
 partitioning\dqn\containers\ScaleReward.class
 correlation_clustering\SimilarityGraph$RecordSim.class
-partitioning\dqn\DQNPartitioner.class
 wordCount\WordCountMultiAgent.class
 wordCount\WordCountMultiAgent$1.class
 correlation_clustering\CorrelationClustering$ForwardKeys.class
@@ -67,6 +66,7 @@ partitioning\dalton\QTableReducer.class
 correlation_clustering\clustering\Vote.class
 partitioning\dalton\DaltonCooperative$Action.class
 wordCount\containers\WordCountState.class
+partitioning\dqn\DRLPartitioner.class
 partitioning\dalton\containers\HotStatistics.class
 wordCount\WordCountMultiAgent$2.class
 test\PrecisionBenchmark$PrecisionType.class

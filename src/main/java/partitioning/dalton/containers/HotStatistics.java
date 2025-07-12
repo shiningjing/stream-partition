@@ -93,21 +93,19 @@ public class HotStatistics implements Serializable {
     private int isHotExact(Record tuple, List<DaltonCooperative.Frequency> topKeys){
         boolean isHot = hotKeys.contains(tuple.getKeyId());
         total++;
-        int result = 1; // 1 means hot, 0 not hot
-        int freq = Integer.MAX_VALUE;
-        if (!isHot) {
-            freq = keysStatistics.getOrDefault(tuple.getKeyId(), 0) + 1;
-            keysStatistics.put(tuple.getKeyId(), freq);
-            if (freq > threshold){
-                hotKeys.add(tuple.getKeyId());
-                isHot = true;
-                result = nextUpdateHot + hotInterval;
-            }
-            else{
-                result = 0;
-            }
-        }
+        int result = 1;
 
+        int freq = keysStatistics.getOrDefault(tuple.getKeyId(), 0) + 1;
+        keysStatistics.put(tuple.getKeyId(), freq);
+        
+        if (!isHot && freq > threshold) {
+            hotKeys.add(tuple.getKeyId());
+            isHot = true;
+            result = nextUpdateHot + hotInterval;
+        } else if (!isHot) {
+            result = 0;
+        }
+        
         if (topKeys != null){
             updateTopKeys(tuple.getKeyId(), freq, topKeys);
         }
@@ -227,5 +225,15 @@ public class HotStatistics implements Serializable {
 
     public void setHotInterval(int h){
         hotInterval = h;
+    }
+
+    /**
+     * 获取指定键的频率统计
+     * 
+     * @param keyId 键ID
+     * @return 键的频率，如果键不存在则返回0
+     */
+    public int getKeyFrequency(int keyId) {
+        return keysStatistics.getOrDefault(keyId, 0);
     }
 }

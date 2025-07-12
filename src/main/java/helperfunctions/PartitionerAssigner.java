@@ -21,7 +21,7 @@ package helperfunctions;
 import partitioning.*;
 import partitioning.dalton.*;
 
-import partitioning.dqn.DQNPartitioner;
+import partitioning.dqn.DRLPartitioner;
 
 enum PARTITIONING_ALG{
     SHUFFLING,
@@ -32,7 +32,7 @@ enum PARTITIONING_ALG{
     cAM,
     DAGreedy,
     SRLP,
-    DQN
+    DRLP
 }
 
 public class PartitionerAssigner {
@@ -69,8 +69,8 @@ public class PartitionerAssigner {
             case "SRLP":
                 partitioning_alg = PARTITIONING_ALG.SRLP;
                 break;
-            case "DQN":
-                partitioning_alg = PARTITIONING_ALG.DQN;
+            case "DRLP":
+                partitioning_alg = PARTITIONING_ALG.DRLP;
                 break;
             default:
                 throw new IllegalArgumentException("Unknown Partitioning Algorithm " + str);
@@ -94,8 +94,8 @@ public class PartitionerAssigner {
             partitioner = new cAM(parallelism, slide, size, numOfKeys);
         } else if (algorithm == PARTITIONING_ALG.DAGreedy){
             partitioner = new DAGreedy(parallelism, slide, size, numOfKeys);
-        } else if (algorithm == PARTITIONING_ALG.DQN){
-            partitioner = new DQNPartitioner(parallelism, slide, size, numOfKeys);
+        } else if (algorithm == PARTITIONING_ALG.DRLP){
+            partitioner = new DRLPartitioner(parallelism, slide, size, numOfKeys);
         } else {
             throw new IllegalArgumentException("Unknown Partitioning Algorithm" + algorithm);
         }
