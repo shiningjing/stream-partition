@@ -20,10 +20,6 @@ package partitioning.dalton.state;
 
 import java.util.*;
 import java.io.Serializable;
-import java.io.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import partitioning.containers.PartialAssignment;
 import partitioning.containers.Worker;
@@ -61,11 +57,13 @@ public class State implements Serializable{
     private Set<Integer> hotMaxSplit;
 
     // 添加输出相关字段
+    /*
     private static final long OUTPUT_INTERVAL_MS = 10000; // 10秒
     private final AtomicLong lastOutputTime = new AtomicLong(0);
     private transient BufferedWriter metricsWriter;
     private final String metricsFileName;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    */
 
     public State(int size, int slide, int numWorkers, int estimatedNumKeys){
         workers = new ArrayList<>(numWorkers);
@@ -98,10 +96,13 @@ public class State implements Serializable{
         hotMaxSplit = new HashSet<>(numWorkers);
 
         // 初始化指标文件名
+        /*
         this.metricsFileName = "output/wordcount_partitioning_metrics_" + System.currentTimeMillis() + ".csv";
-        initializeMetricsWriter();
+        //initializeMetricsWriter();
+        */
     }
 
+    /*
     private void initializeMetricsWriter() {
         try {
             metricsWriter = new BufferedWriter(new FileWriter(metricsFileName));
@@ -172,6 +173,7 @@ public class State implements Serializable{
         
         return totalReplicas / keyAssignmentsBitSet.size();
     }
+    */
 
     public int getExpirationTs(){
         return hotStatistics.getExpirationTs();
@@ -256,7 +258,7 @@ public class State implements Serializable{
         workers.get(worker).updateState();
         
         // 在每次更新后检查是否需要输出指标
-        writeMetrics();
+        // writeMetrics();
     }
 
     private void updateAssignments(int key, int worker){
@@ -295,14 +297,10 @@ public class State implements Serializable{
 
     public double maxLoad(){
         double maxLoad = 0;
-        double sumLoad = 0;
         for (int i = 0; i < numWorkers; i++) {
             double load = getLoad(i);
             if (load > maxLoad) maxLoad = load;
-            sumLoad += load;
         }
-        double avgLoad = sumLoad / numWorkers;
-        double imbalance = (maxLoad - avgLoad) / avgLoad;
         return maxLoad;
     }
 
@@ -370,6 +368,7 @@ public class State implements Serializable{
     }
 
     // 添加关闭方法
+    /*
     public void close() {
         try {
             if (metricsWriter != null) {
@@ -391,4 +390,5 @@ public class State implements Serializable{
         lastOutputTime.set(0);
         initializeMetricsWriter();
     }
+    */
 }

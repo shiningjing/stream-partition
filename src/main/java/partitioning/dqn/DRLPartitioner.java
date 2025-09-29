@@ -120,7 +120,7 @@ public class DRLPartitioner extends Partitioner {
     private static final boolean ENABLE_FREQUENCY_BASED_LIMIT = true;  // 启用基于频率的动态上限
     private static final int MIN_PARTITIONS_PER_KEY = 1;              // 每个键最少分区数
     private static final int MAX_PARTITIONS_PER_KEY = 16;              // 每个键最多分区数（绝对上限）
-    private static final double FREQUENCY_LOG_BASE = 1.3;             // 对数函数底数
+    private static final double FREQUENCY_LOG_BASE = 1.5;             // 对数函数底数
     private static final double FREQUENCY_SCALE_FACTOR = 1.0;         // 频率缩放因子
     
     // 频率统计和缓存
@@ -463,13 +463,11 @@ public class DRLPartitioner extends Partitioner {
         double avgLoad = state.avgLoad();
         double L = state.getLoad(action);
         double loadDiff = (L - avgLoad)/avgLoad;
-        double loadReward = -loadDiff * 0.5;
-        reward += loadReward;
+        reward -= loadDiff * 0.5;
         
         // 2. 分片惩罚
         double fragmentation = state.keyfragmentation(record.getKeyId()).cardinality() / (double)parallelism;
-        double fragmentationPenalty = -fragmentation * 0.5;
-        reward += fragmentationPenalty;
+        reward -= fragmentation * 0.5;
 
         // 3. 对奖励进行缩放归一化（如果缩放器可用）
         if (rewardScaler != null) {
